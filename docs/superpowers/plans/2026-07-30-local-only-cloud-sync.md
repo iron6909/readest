@@ -140,7 +140,7 @@ git commit -m "refactor: remove Readest Cloud synchronization"
 
 **Files:**
 - Delete: `apps/readest-app/src/context/AuthContext.tsx`
-- Delete: `apps/readest-app/src/app/auth/`
+- Delete: `apps/readest-app/src/app/auth/` except the native OAuth helper after it is moved to a neutral provider-OAuth module
 - Delete: `apps/readest-app/src/app/user/`
 - Delete: `apps/readest-app/src/app/send/`
 - Delete: `apps/readest-app/src/app/s/`
@@ -170,9 +170,9 @@ Run: `pnpm test -- src/__tests__/app/library/library-empty-state.test.tsx --run`
 
 Expected: FAIL because the component renders a login link for anonymous users.
 
-- [ ] **Step 3: Remove account-only routes and UI**
+- [ ] **Step 3: Move shared native OAuth code, then remove account-only routes and UI**
 
-Delete the auth, profile, billing, share, Send to Readest, account storage, and user API routes. Remove account menu handlers, login redirects, Readest Cloud row, share entry points, and user-state conditions from remaining components. Keep unrelated route helpers used by supported paths.
+Move `src/app/auth/utils/nativeAuth.ts` to a neutral OAuth utility path and update the Google Drive and OneDrive OAuth imports before deleting Supabase auth pages and helpers. Delete the remaining auth, profile, billing, share, Send to Readest, account storage, and user API routes. Remove account menu handlers, login redirects, Readest Cloud row, share entry points, and user-state conditions from remaining components. Keep unrelated route helpers used by supported paths.
 
 - [ ] **Step 4: Remove unreferenced account transports**
 
