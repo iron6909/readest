@@ -25,8 +25,6 @@ export interface ThirdPartyRowInputs {
   enabled: boolean;
   configured: boolean;
   syncing: boolean;
-  /** Enabled but disallowed by the premium guard (never silently unpaused). */
-  paused: boolean;
   /** Last terminal sync error, from fileSyncStore. */
   lastError: string | null | undefined;
   /** This provider's Upload Book Files toggle. */
@@ -48,23 +46,20 @@ export interface ThirdPartyRowInputs {
 }
 
 export interface CanToggleCloudProviderInputs {
-  isPremium: boolean;
   isConfigured: boolean;
   isEnabled: boolean;
 }
 
 /**
  * Whether a third-party provider's checkbox can be toggled inline. Turning a
- * provider ON requires premium + configured; turning an already-enabled
- * provider OFF is always allowed, even without premium, so a user whose plan
- * lapses is never trapped with a provider they can't disable.
+ * provider ON requires configured credentials; turning an already-enabled
+ * provider OFF is always allowed so stale credentials can be disconnected.
  */
 export const canToggleCloudProvider = (s: CanToggleCloudProviderInputs): boolean =>
-  (s.isPremium && s.isConfigured) || s.isEnabled;
+  s.isConfigured || s.isEnabled;
 
 export const getThirdPartyRowStatus = (_: TranslationFunc, s: ThirdPartyRowInputs): string => {
   if (!s.enabled) return s.configured ? _('Configured') : _('Not connected');
-  if (s.paused) return _('Paused — plan required');
   // Enabled but the web token is gone — it silently syncs nothing until the user
   // reconnects, so the row must not claim it is active.
   if (s.needsReauth) return _('Reconnect required');
