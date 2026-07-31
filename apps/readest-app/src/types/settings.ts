@@ -310,6 +310,7 @@ export interface SystemSettings {
   migrationVersion: number;
   deeplApiKey?: string;
   deeplBaseUrl?: string;
+  googleBooksApiKey?: string;
   localBooksDir: string;
   customRootDir?: string;
   /**

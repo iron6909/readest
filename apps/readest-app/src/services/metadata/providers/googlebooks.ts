@@ -39,19 +39,27 @@ export class GoogleBooksProvider extends BaseMetadataProvider {
   constructor(apiKeys: string) {
     super();
 
-    if (!apiKeys) {
-      throw new Error('Google Books API keys are required');
-    }
-
-    this.apiKeys = apiKeys.split(',').map((key) => key.trim());
+    this.apiKeys = apiKeys
+      .split(',')
+      .map((key) => key.trim())
+      .filter(Boolean);
   }
 
   protected override getProviderConfidenceBonus(): number {
     return 10;
   }
 
-  private get apiKey(): string {
-    return this.apiKeys[Math.floor(Math.random() * this.apiKeys.length)]!;
+  private get apiKey(): string | undefined {
+    return this.apiKeys.length
+      ? this.apiKeys[Math.floor(Math.random() * this.apiKeys.length)]
+      : undefined;
+  }
+
+  private buildSearchUrl(query: string): string {
+    const params = new URLSearchParams({ q: query });
+    const apiKey = this.apiKey;
+    if (apiKey) params.set('key', apiKey);
+    return `${this.baseUrl}/volumes?${params.toString()}`;
   }
 
   protected async searchByISBN(isbn: string): Promise<Metadata[]> {
@@ -60,9 +68,7 @@ export class GoogleBooksProvider extends BaseMetadataProvider {
     }
 
     try {
-      const response = await fetchWithTimeout(
-        `${this.baseUrl}/volumes?q=isbn:${isbn}&key=${this.apiKey}`,
-      );
+      const response = await fetchWithTimeout(this.buildSearchUrl(`isbn:${isbn}`));
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -107,9 +113,7 @@ export class GoogleBooksProvider extends BaseMetadataProvider {
         query += `+language:${normalizedLangCode(language.trim())}`;
       }
 
-      const response = await fetchWithTimeout(
-        `${this.baseUrl}/volumes?q=${encodeURIComponent(query)}&key=${this.apiKey}`,
-      );
+      const response = await fetchWithTimeout(this.buildSearchUrl(query));
 
       if (!response.ok) {
         if (response.status === 429) {

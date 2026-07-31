@@ -186,6 +186,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
 
   deeplApiKey: '',
   deeplBaseUrl: 'https://api-free.deepl.com/v2',
+  googleBooksApiKey: '',
 
   pinCodeEnabled: false,
 

@@ -8,7 +8,7 @@ import {
   ValidationResult,
 } from '@/utils/validation';
 import { MetadataSource } from './SourceSelector';
-import { searchMetadata } from '@/libs/metadata';
+import { searchMetadata } from '@/services/metadata/search';
 import { formatAuthors, formatTitle, getPrimaryLanguage } from '@/utils/book';
 
 export const useMetadataEdit = (metadata: BookMetadata | null) => {

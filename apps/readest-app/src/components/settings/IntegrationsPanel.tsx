@@ -36,7 +36,7 @@ import { resolveCloudSyncGate, settingsKeyForBackend } from '@/services/sync/clo
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import { canBackendRun } from '@/services/sync/file/runLibrarySync';
 import SubPageHeader from './SubPageHeader';
-import { SectionTitle, SettingLabel, Tips } from './primitives';
+import { SectionTitle, SettingLabel, SettingsInput, Tips } from './primitives';
 
 type SubPage =
   | 'kosync'
@@ -80,6 +80,7 @@ const IntegrationsPanel: React.FC = () => {
   const onedriveLastError = useFileSyncStore((s) => s.lastErrorByKind.onedrive);
 
   const [subPage, setSubPage] = useState<SubPage>(null);
+  const [googleBooksApiKey, setGoogleBooksApiKey] = useState(settings.googleBooksApiKey || '');
 
   // Hydrate the OPDS store from settings so the row's catalog count is
   // accurate on first open. Without this the store starts empty and the
@@ -480,6 +481,23 @@ const IntegrationsPanel: React.FC = () => {
               status={opdsStatus}
               onClick={() => setSubPage('opds')}
             />
+            <div className='flex items-center gap-3 px-4 py-3'>
+              <div className='min-w-0 flex-1'>
+                <SettingLabel>{_('Google Books API Key')}</SettingLabel>
+                <p className='text-base-content/65 text-[0.85em]'>
+                  {_('Optional. Metadata search works anonymously without a key.')}
+                </p>
+              </div>
+              <SettingsInput
+                type='password'
+                value={googleBooksApiKey}
+                onChange={(event) => setGoogleBooksApiKey(event.target.value)}
+                onBlur={() => saveSysSettings(envConfig, 'googleBooksApiKey', googleBooksApiKey)}
+                autoComplete='off'
+                aria-label={_('Google Books API Key')}
+                className='max-w-52'
+              />
+            </div>
           </div>
         </div>
       </div>
