@@ -36,14 +36,12 @@ interface BookDetailViewProps {
   book: Book;
   metadata: BookMetadata | null;
   fileSize: number | null;
-  shareEnabled?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   onDeleteCloudBackup?: () => void;
   onDeleteLocalCopy?: () => void;
   onDownload?: () => void;
   onUpload?: () => void;
-  onShare?: () => void;
   onExport?: () => void;
 }
 
@@ -51,21 +49,19 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   book,
   metadata,
   fileSize,
-  shareEnabled,
   onEdit,
   onDelete,
   onDeleteCloudBackup,
   onDeleteLocalCopy,
   onDownload,
   onUpload,
-  onShare,
   onExport,
 }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
 
-  // Export and Share both read the book file off disk; `fileSize` is only
+  // Export reads the book file off disk; `fileSize` is only
   // non-null when getBookFileSize could actually open the local copy.
   const hasLocalFile = fileSize !== null;
 
@@ -182,20 +178,6 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)))
                   }
                 />
-                {onShare && (
-                  <MenuItem
-                    noIcon
-                    transient
-                    label={_('Share Book')}
-                    disabled={!shareEnabled}
-                    tooltip={
-                      shareEnabled
-                        ? undefined
-                        : _('Sign in and make the book available to share it')
-                    }
-                    onClick={onShare}
-                  />
-                )}
                 {onExport && (
                   <MenuItem
                     noIcon

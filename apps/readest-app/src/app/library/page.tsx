@@ -45,7 +45,6 @@ import { useBooksSync } from './hooks/useBooksSync';
 import { useLibraryFileSync } from './hooks/useLibraryFileSync';
 import { useBookTransferActions } from './hooks/useBookTransferActions';
 import { useAutoImportFolders } from './hooks/useAutoImportFolders';
-import { useInboxDrainer } from '@/hooks/useInboxDrainer';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
@@ -56,7 +55,6 @@ import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
 import { useOpenBookLink } from '@/hooks/useOpenBookLink';
 import { useReadingWidget } from '@/hooks/useReadingWidget';
-import { useOpenShareLink } from '@/hooks/useOpenShareLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
@@ -291,7 +289,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useOpenAnnotationLink();
   useOpenBookLink();
   useReadingWidget();
-  useOpenShareLink();
   useClipUrlIngress();
   useTransferQueue(libraryLoaded);
 
@@ -301,7 +298,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // parity with useBooksSync. No-op when no provider is enabled.
   useLibraryFileSync();
   const { checkOPDSSubscriptions } = useOPDSSubscriptions();
-  useInboxDrainer();
   const { isDragging } = useDragDropImport();
 
   usePullToRefresh(
