@@ -184,6 +184,9 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   metadataOthersCollapsed: false,
   metadataDescriptionCollapsed: false,
 
+  deeplApiKey: '',
+  deeplBaseUrl: 'https://api-free.deepl.com/v2',
+
   pinCodeEnabled: false,
 
   customDictionaries: [],

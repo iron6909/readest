@@ -1,81 +1,53 @@
-import { getAPIBaseUrl } from '@/services/environment';
 import { stubTranslation as _ } from '@/utils/misc';
-import { ErrorCodes, TranslationProvider } from '../types';
-import { UserPlan } from '@/types/quota';
-import { getSubscriptionPlan, getTranslationQuota } from '@/utils/access';
+import { TranslationProvider } from '../types';
 import { normalizeToShortLang } from '@/utils/lang';
-import { saveDailyUsage } from '../utils';
-
-const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export const deeplProvider: TranslationProvider = {
   name: 'deepl',
   label: _('DeepL'),
-  authRequired: true,
-  quotaExceeded: false,
+  authRequired: false,
   translate: async (
     text: string[],
     sourceLang: string,
     targetLang: string,
-    token?: string | null,
-    useCache: boolean = false,
+    _token?: string | null,
+    _useCache: boolean = false,
   ): Promise<string[]> => {
-    const authRequired = deeplProvider.authRequired;
+    const settings = useSettingsStore.getState().settings;
+    const apiKey = settings.deeplApiKey?.trim();
+    const baseUrl = (settings.deeplBaseUrl?.trim() || 'https://api-free.deepl.com/v2').replace(
+      /\/+$/,
+      '',
+    );
+    if (!apiKey) throw new Error('DeepL API key is required');
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      Authorization: `DeepL-Auth-Key ${apiKey}`,
     };
-
-    let userPlan: UserPlan = 'free';
-    if (token) {
-      userPlan = getSubscriptionPlan(token);
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    if (authRequired && !token) {
-      throw new Error('Authentication token is required for DeepL translation');
-    }
 
     const normalizedSourceLang = normalizeToShortLang(sourceLang).toUpperCase();
     const body = JSON.stringify({
       text: text,
       ...(normalizedSourceLang !== 'AUTO' ? { source_lang: normalizedSourceLang } : {}),
       target_lang: normalizeToShortLang(targetLang).toUpperCase(),
-      use_cache: useCache,
     });
 
-    const quota = getTranslationQuota(userPlan);
-    try {
-      const response = await fetch(DEEPL_API_ENDPOINT, { method: 'POST', headers, body });
+    const response = await fetch(`${baseUrl}/translate`, { method: 'POST', headers, body });
 
-      if (!response.ok) {
-        const data = await response.json();
-        if (data && data.error && data.error === ErrorCodes.DAILY_QUOTA_EXCEEDED) {
-          saveDailyUsage(quota);
-          deeplProvider.quotaExceeded = true;
-          throw new Error(ErrorCodes.DAILY_QUOTA_EXCEEDED);
-        }
-        throw new Error(`Translation failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (!data || !data.translations) {
-        throw new Error('Invalid response from translation service');
-      }
-
-      return text.map((line, i) => {
-        if (!line?.trim().length) {
-          return line;
-        }
-        const translation = data.translations?.[i];
-        if (translation?.daily_usage) {
-          saveDailyUsage(translation.daily_usage);
-          deeplProvider.quotaExceeded = data.daily_usage >= quota;
-        }
-        return translation?.text || line;
-      });
-    } catch (error) {
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Translation failed with status ${response.status}`);
     }
+
+    const data = await response.json();
+    if (!data || !data.translations) {
+      throw new Error('Invalid response from translation service');
+    }
+
+    return text.map((line, i) => {
+      if (!line?.trim().length) return line;
+      return data.translations?.[i]?.text || line;
+    });
   },
 };

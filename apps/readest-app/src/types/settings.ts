@@ -308,6 +308,8 @@ export interface HardwarePageTurnerSettings {
 export interface SystemSettings {
   version: number;
   migrationVersion: number;
+  deeplApiKey?: string;
+  deeplBaseUrl?: string;
   localBooksDir: string;
   customRootDir?: string;
   /**

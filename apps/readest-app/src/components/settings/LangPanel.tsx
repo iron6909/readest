@@ -22,6 +22,7 @@ import {
   BoxedList,
   NavigationRow,
   SettingsRow,
+  SettingsInput,
   SettingsSelect,
   SettingsSwitchRow,
 } from './primitives';
@@ -33,8 +34,14 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const _ = useTranslation();
   const { token } = useAuth();
   const { envConfig } = useEnv();
-  const { settings, applyUILanguage, activeSettingsItemId, setActiveSettingsItemId } =
-    useSettingsStore();
+  const {
+    settings,
+    setSettings,
+    saveSettings,
+    applyUILanguage,
+    activeSettingsItemId,
+    setActiveSettingsItemId,
+  } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings, recreateViewer } = useReaderStore();
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
@@ -53,6 +60,16 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   );
   const [showCustomDictionaries, setShowCustomDictionaries] = useState(false);
   const [showWordLens, setShowWordLens] = useState(false);
+  const [deeplApiKey, setDeeplApiKey] = useState(settings.deeplApiKey || '');
+  const [deeplBaseUrl, setDeeplBaseUrl] = useState(
+    settings.deeplBaseUrl || 'https://api-free.deepl.com/v2',
+  );
+
+  const saveDeepLSettings = () => {
+    const next = { ...settings, deeplApiKey, deeplBaseUrl };
+    setSettings(next);
+    saveSettings(envConfig, next);
+  };
 
   // Android Back / Esc: when a sub-page is open, intercept and step back to the
   // language list instead of letting <Dialog>'s listener close the whole
@@ -361,6 +378,29 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             options={getTranslationProviderOptions()}
           />
         </SettingsRow>
+        {translationProvider === 'deepl' && (
+          <>
+            <SettingsRow label={_('DeepL API Key')}>
+              <SettingsInput
+                type='password'
+                value={deeplApiKey}
+                onChange={(event) => setDeeplApiKey(event.target.value)}
+                onBlur={saveDeepLSettings}
+                autoComplete='off'
+                aria-label={_('DeepL API Key')}
+              />
+            </SettingsRow>
+            <SettingsRow label={_('DeepL API URL')}>
+              <SettingsInput
+                type='url'
+                value={deeplBaseUrl}
+                onChange={(event) => setDeeplBaseUrl(event.target.value)}
+                onBlur={saveDeepLSettings}
+                aria-label={_('DeepL API URL')}
+              />
+            </SettingsRow>
+          </>
+        )}
         <SettingsRow label={_('Translate To')} data-setting-id='settings.language.targetLanguage'>
           <SettingsSelect
             value={getCurrentTargetLangOption().value}
