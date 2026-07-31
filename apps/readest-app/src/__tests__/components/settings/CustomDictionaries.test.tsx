@@ -37,10 +37,6 @@ vi.mock('@/hooks/useFileSelector', () => ({
   useFileSelector: () => ({ selectFiles: vi.fn() }),
 }));
 
-vi.mock('@/services/sync/replicaBinaryUpload', () => ({
-  queueDictionaryBinaryUpload: vi.fn(),
-}));
-
 const LOCKED_TITLE = 'Disable System Dictionary first to change this.';
 
 const seedSettings = (settings: DictionarySettings) => {

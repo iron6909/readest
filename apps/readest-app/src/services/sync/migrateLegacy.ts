@@ -1,6 +1,5 @@
 import { partialMD5 } from '@/utils/md5';
 import { uniqueId } from '@/utils/misc';
-import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import type { EnvConfigType } from '@/services/environment';
 import type { BaseDir } from '@/types/system';
 
@@ -25,7 +24,7 @@ interface LegacyReplicaRecord {
 }
 
 export interface MigrateLegacyReplicasDeps<T extends LegacyReplicaRecord> {
-  /** Replica kind name — passed to `queueReplicaBinaryUpload`. */
+  /** Kind name used in migration diagnostics. */
   kind: string;
   /** App-service base dir for the kind (`'Fonts'`, `'Images'`, ...). */
   baseDir: BaseDir;
@@ -41,8 +40,6 @@ export interface MigrateLegacyReplicasDeps<T extends LegacyReplicaRecord> {
   updateRecord: (id: string, next: T) => void;
   /** Persist the kind's settings entry post-migration. */
   saveStore: (envConfig: EnvConfigType) => Promise<void>;
-  /** Publish the now-syncable record to the replica row. */
-  publishUpsert: (record: T) => void;
 }
 
 /**
@@ -56,8 +53,7 @@ export interface MigrateLegacyReplicasDeps<T extends LegacyReplicaRecord> {
  *   3. Mint `bundleDir = uniqueId()`; copy the file to
  *      `<baseDir>/<bundleDir>/<filename>` and remove the flat-path one.
  *   4. Patch the in-memory record (contentId, bundleDir, byteSize,
- *      path), persist via `saveStore`, then publish through
- *      `publishUpsert` and queue the binary upload.
+ *      path), then persist via `saveStore`.
  *
  * Idempotent: a record that already carries `contentId` is filtered
  * out upstream by `getCandidates`. If the file is missing on disk,
@@ -117,9 +113,5 @@ export const migrateLegacyReplicas = async <T extends LegacyReplicaRecord>(
     await deps.saveStore(envConfig);
   } catch (err) {
     console.warn(`migrateLegacyReplicas[${deps.kind}]: save failed`, err);
-  }
-  for (const record of migrated) {
-    deps.publishUpsert(record);
-    void queueReplicaBinaryUpload(deps.kind, record, appService);
   }
 };

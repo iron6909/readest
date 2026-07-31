@@ -1,20 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-vi.mock('@/services/sync/replicaPublish', () => ({
-  publishReplicaDelete: vi.fn(),
-  publishReplicaUpsert: vi.fn(),
-}));
-
 import { useCustomDictionaryStore, findDictionaryByContentId } from '@/store/customDictionaryStore';
 import { enableReplicaAutoPersist } from '@/services/sync/replicaPersist';
 import { BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
-import { publishReplicaUpsert } from '@/services/sync/replicaPublish';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { EnvConfigType } from '@/services/environment';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 
 const ZERO = (s: string) => s.startsWith('web:builtin:');
-const mockPublishReplicaUpsert = vi.mocked(publishReplicaUpsert);
 
 describe('customDictionaryStore — web search CRUD', () => {
   beforeEach(() => {
@@ -412,7 +405,7 @@ describe('customDictionaryStore — web search CRUD', () => {
     });
   });
 
-  it('updateDictionary preserves reincarnation when publishing a renamed dictionary', () => {
+  it('updateDictionary preserves reincarnation when renaming a dictionary', () => {
     const { addDictionary, updateDictionary } = useCustomDictionaryStore.getState();
     addDictionary({
       id: 'mdict:abc',
@@ -425,16 +418,12 @@ describe('customDictionaryStore — web search CRUD', () => {
       reincarnation: 'epoch-1',
     });
 
-    mockPublishReplicaUpsert.mockClear();
     updateDictionary('mdict:abc', { name: 'New title' });
 
-    expect(mockPublishReplicaUpsert).toHaveBeenCalledOnce();
-    // Args: (kind, record, contentId, reincarnation?)
-    const call = mockPublishReplicaUpsert.mock.calls[0]!;
-    expect(call[0]).toBe('dictionary');
-    expect(call[1]).toMatchObject({ name: 'New title', reincarnation: 'epoch-1' });
-    expect(call[2]).toBe('content-abc');
-    expect(call[3]).toBe('epoch-1');
+    expect(useCustomDictionaryStore.getState().getDictionary('mdict:abc')).toMatchObject({
+      name: 'New title',
+      reincarnation: 'epoch-1',
+    });
   });
 });
 
@@ -519,12 +508,6 @@ describe('customDictionaryStore — applyRemoteDictionarySettings (PR 6)', () =>
     });
     const after = useCustomDictionaryStore.getState().settings;
     expect(after.defaultProviderId).toBe('local-x');
-  });
-
-  it('does NOT call publishReplicaUpsert (this is a pull, not a local edit)', () => {
-    const { applyRemoteDictionarySettings } = useCustomDictionaryStore.getState();
-    applyRemoteDictionarySettings({ providerOrder: ['remote-y'] });
-    expect(mockPublishReplicaUpsert).not.toHaveBeenCalled();
   });
 });
 
