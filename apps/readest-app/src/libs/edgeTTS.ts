@@ -3,8 +3,7 @@ import WebSocket from 'isomorphic-ws';
 import { randomMd5 } from '@/utils/misc';
 import { LRUCache } from '@/utils/lru';
 import { genSSML } from '@/utils/ssml';
-import { fetchWithAuth } from '@/utils/fetch';
-import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform } from '@/services/environment';
 
 // Cloudflare Workers expose a global `WebSocketPair` that is not available in
 // browsers or Node.js. The Node `ws` package (used transitively via
@@ -316,39 +315,12 @@ export interface EdgeSpeechAudio {
   boundaries: TTSWordBoundary[];
 }
 
-// Response header used to carry word boundaries through the authenticated
-// HTTPS proxy route (`/api/tts/edge`), which streams only the audio body.
-export const WORD_BOUNDARIES_HEADER = 'X-TTS-Word-Boundaries';
-
-// HTTP header values must be ASCII, but boundary `text` can be any script
-// (em-dashes, CJK, accents). Percent-encode the JSON so the header stays
-// ASCII-safe across Node, browsers, and Cloudflare Workers.
-export const serializeWordBoundaries = (boundaries: TTSWordBoundary[]): string =>
-  encodeURIComponent(JSON.stringify(boundaries));
-
-export const parseWordBoundariesHeader = (value: string | null): TTSWordBoundary[] => {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(decodeURIComponent(value));
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (b: unknown): b is TTSWordBoundary =>
-        !!b &&
-        typeof (b as TTSWordBoundary).offset === 'number' &&
-        typeof (b as TTSWordBoundary).duration === 'number' &&
-        typeof (b as TTSWordBoundary).text === 'string',
-    );
-  } catch {
-    return [];
-  }
-};
-
 export const hashTTSPayload = (payload: EdgeTTSPayload): string => {
   const base = JSON.stringify(payload);
   return md5(base);
 };
 
-export type EDGE_TTS_PROTOCOL = 'wss' | 'https';
+export type EDGE_TTS_PROTOCOL = 'wss';
 
 export class EdgeSpeechTTS {
   static voices = genVoiceList(EDGE_TTS_VOICES);
@@ -362,37 +334,8 @@ export class EdgeSpeechTTS {
     string,
     Promise<{ blob: Blob; boundaries: TTSWordBoundary[] }>
   >();
-  private protocol: EDGE_TTS_PROTOCOL = 'wss';
 
-  constructor(protocol?: EDGE_TTS_PROTOCOL) {
-    if (protocol) {
-      this.protocol = protocol;
-    }
-  }
-
-  async #fetchEdgeSpeechHttp({ lang, text, voice, rate }: EdgeTTSPayload): Promise<Response> {
-    const url = getAPIBaseUrl() + '/tts/edge';
-
-    const response = await fetchWithAuth(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: text,
-        voice,
-        rate,
-        lang,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Edge TTS HTTP request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response;
-  }
-
+  constructor(_protocol: EDGE_TTS_PROTOCOL = 'wss') {}
   async #fetchEdgeSpeechWs({ lang, text, voice, rate }: EdgeTTSPayload): Promise<EdgeSpeechAudio> {
     const connectId = randomMd5();
     const params = new URLSearchParams({
@@ -518,9 +461,8 @@ export class EdgeSpeechTTS {
         }
       });
     } else if (isCloudflareWorkers()) {
-      // The Workers path backs the HTTPS proxy route. It captures both the
-      // audio body and the word boundaries (audio.metadata frames) so the
-      // route can forward boundaries via the WORD_BOUNDARIES_HEADER.
+      // Cloudflare Workers require fetch-based WebSocket upgrades because the
+      // Node `ws` transport is unavailable in that runtime.
       return new Promise<EdgeSpeechAudio>((resolve, reject) => {
         (async () => {
           try {
@@ -720,25 +662,13 @@ export class EdgeSpeechTTS {
   }
 
   async #fetchEdgeSpeech(payload: EdgeTTSPayload): Promise<EdgeSpeechAudio> {
-    if (this.protocol === 'https') {
-      // The HTTPS proxy streams the audio body and carries word boundaries in
-      // the WORD_BOUNDARIES_HEADER response header (see /api/tts/edge route).
-      const response = await this.#fetchEdgeSpeechHttp(payload);
-      return {
-        response,
-        boundaries: parseWordBoundariesHeader(response.headers.get(WORD_BOUNDARIES_HEADER)),
-      };
-    } else {
-      return this.#fetchEdgeSpeechWs(payload);
-    }
+    return this.#fetchEdgeSpeechWs(payload);
   }
 
   async create(payload: EdgeTTSPayload): Promise<Response> {
     return (await this.#fetchEdgeSpeech(payload)).response;
   }
 
-  // Server-side helper for the /api/tts/edge route: returns the audio Response
-  // together with the captured word boundaries so the route can forward them.
   async createWithBoundaries(payload: EdgeTTSPayload): Promise<EdgeSpeechAudio> {
     return this.#fetchEdgeSpeech(payload);
   }

@@ -17,7 +17,7 @@ vi.mock('@/libs/edgeTTS', async (importOriginal) => {
         { id: 'en-US-AriaNeural', name: 'Aria', lang: 'en-US' },
         { id: 'fr-FR-DeniseNeural', name: 'Denise', lang: 'fr-FR' },
       ];
-      constructor(protocol: string) {
+      constructor(protocol = 'wss') {
         h.lastConstructedProtocol = protocol;
       }
       create = h.create;
@@ -59,12 +59,6 @@ describe('EdgeSpeechProvider', () => {
     h.create.mockRejectedValueOnce(new Error('boom'));
     const failing = new EdgeSpeechProvider();
     await expect(failing.init()).resolves.toBe(false);
-  });
-
-  test('init accepts an explicit protocol', async () => {
-    const provider = new EdgeSpeechProvider();
-    await provider.init('https');
-    expect(h.lastConstructedProtocol).toBe('https');
   });
 
   test('synthesize always pins rate to 1.0 in the payload', async () => {

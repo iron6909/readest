@@ -86,13 +86,13 @@ describe('EdgeTTSClient offline cache-only init', () => {
     expect(events).not.toContain('tts-need-auth');
   });
 
-  test('without a cache, an offline unauthenticated init fails and asks for auth', async () => {
+  test('without a cache, an offline init fails without requesting account auth', async () => {
     cacheEnabled = false;
     const { controller, events } = fakeController(false);
     const client = new EdgeTTSClient(controller, fakeAppService);
     await expect(client.init()).resolves.toBe(false);
     expect(client.initialized).toBe(false);
-    expect(events).toContain('tts-need-auth');
+    expect(events).not.toContain('tts-need-auth');
   });
 
   test('a successful probe still initializes normally with a cache present', async () => {
