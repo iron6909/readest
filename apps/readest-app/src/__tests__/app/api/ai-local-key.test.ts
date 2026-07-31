@@ -5,7 +5,6 @@ const mocks = vi.hoisted(() => ({
   streamText: vi.fn(),
   embed: vi.fn(),
   embedMany: vi.fn(),
-  validateUserAndToken: vi.fn(),
 }));
 
 vi.mock('ai', () => ({
@@ -13,10 +12,6 @@ vi.mock('ai', () => ({
   streamText: mocks.streamText,
   embed: mocks.embed,
   embedMany: mocks.embedMany,
-}));
-
-vi.mock('@/utils/access', () => ({
-  validateUserAndToken: mocks.validateUserAndToken,
 }));
 
 import { POST as chat } from '@/app/api/ai/chat/route';
@@ -55,7 +50,6 @@ describe('local AI credentials', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.createGateway).toHaveBeenCalledWith({ apiKey: 'user-key' });
-    expect(mocks.validateUserAndToken).not.toHaveBeenCalled();
   });
 
   test('chat rejects requests without a user-supplied key', async () => {
@@ -73,6 +67,5 @@ describe('local AI credentials', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.createGateway).toHaveBeenCalledWith({ apiKey: 'user-key' });
-    expect(mocks.validateUserAndToken).not.toHaveBeenCalled();
   });
 });

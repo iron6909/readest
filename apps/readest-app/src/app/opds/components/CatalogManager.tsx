@@ -20,9 +20,6 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isWebAppPlatform } from '@/services/environment';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
-import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
-import { isCredentialsSyncEnabled } from '@/services/sync/syncCategories';
-import { isSyncError } from '@/libs/errors';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
 import { eventDispatcher } from '@/utils/event';
@@ -250,21 +247,6 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
     // that mode the creds stay device-local by design and never need
     // the passphrase, so prompting would be both pointless and
     // confusing (Settings → Sync → Credentials toggle).
-    const hasCredentials = !!(newCatalog.username || newCatalog.password);
-    if (hasCredentials && isCredentialsSyncEnabled()) {
-      try {
-        await ensurePassphraseUnlocked();
-      } catch (err) {
-        if (!(isSyncError(err) && err.code === 'NO_PASSPHRASE')) {
-          // Surface unexpected errors; cancel-by-user is silent.
-          setUrlError(err instanceof Error ? err.message : String(err));
-          setIsValidating(false);
-          return;
-        }
-        // User cancelled the prompt — save locally without encrypted sync.
-      }
-    }
-
     if (editingCatalogId) {
       useCustomOPDSStore.getState().updateCatalog(editingCatalogId, {
         name: newCatalog.name,

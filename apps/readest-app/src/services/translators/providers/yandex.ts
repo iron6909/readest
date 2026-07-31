@@ -14,10 +14,8 @@ import { YANDEX_REQUEST_HEADERS, YANDEX_SESSION_URL, YANDEX_TRANSLATE_URL } from
  * - the API rejects texts longer than ~650 chars with 413 "The text size
  *   exceeds the maximum" (verified empirically — the FOSWLY docs claiming
  *   10k are outdated), so longer texts are split into chunks;
- * - the session endpoint validates the Referer header. In the Tauri app we
- *   send it directly; in web builds the browser cannot spoof it cross-origin,
- *   so requests go through the same-origin proxy at /api/yandex-translate,
- *   which attaches the headers server-side.
+ * - the session endpoint validates the Referer header. The Tauri app can send
+ *   it directly; browser builds cannot and therefore do not expose Yandex.
  */
 const MAX_CHARS_PER_REQUEST = 600;
 const MAX_CONCURRENT_REQUESTS = 3;
@@ -25,7 +23,6 @@ const MAX_CONCURRENT_REQUESTS = 3;
 // every translate chunk potentially retrying once with the refreshed SID.
 const MAX_TRANSLATE_REQUESTS_PER_CALL = 29;
 const TRANSPORT_TIMEOUT_MS = 15_000;
-const PROXY_URL = '/api/yandex-translate';
 
 interface YandexSession {
   id: string;
@@ -94,18 +91,8 @@ const getRequestTarget = (endpoint: 'session' | 'translate', token?: string | nu
       direct: true,
     };
   }
-  if (!token) {
-    throw new Error('yandex translate requires authentication in web builds');
-  }
-  return {
-    fetchImpl: window.fetch.bind(window),
-    url: `${PROXY_URL}?endpoint=${endpoint}`,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Bearer ${token}`,
-    },
-    direct: false,
-  };
+  void token;
+  throw new Error('yandex translate is available only in desktop builds');
 };
 
 const withParams = (base: string, params: URLSearchParams) =>
@@ -292,7 +279,8 @@ async function translateChunk(
 export const yandexProvider: TranslationProvider = {
   name: 'yandex',
   label: _('Yandex Translate'),
-  get authRequired() {
+  authRequired: false,
+  get disabled() {
     return !isTauriAppPlatform();
   },
   translate: async (

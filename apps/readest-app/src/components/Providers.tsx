@@ -33,10 +33,7 @@ import { CommandPaletteProvider, CommandPalette } from '@/components/command-pal
 import AtmosphereOverlay from '@/components/AtmosphereOverlay';
 import AppLockScreen from '@/components/AppLockScreen';
 import AppLockDialog from '@/components/settings/AppLockDialog';
-import PassphrasePrompt from '@/components/PassphrasePrompt';
 import TelemetryConsentDialog from '@/components/TelemetryConsentDialog';
-import { upgradeToKeychainIfAvailable } from '@/libs/crypto/passphrase';
-import { cryptoSession } from '@/libs/crypto/session';
 import { useAppLockStore } from '@/store/appLockStore';
 
 // One-time, on first launch after this feature ships, decide how to handle
@@ -191,13 +188,6 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   // the saved passphrase. Failures are silent — the gate prompts on
   // first encrypted-field operation if we couldn't restore.
   useEffect(() => {
-    void (async () => {
-      await upgradeToKeychainIfAvailable();
-      await cryptoSession.tryRestoreFromStore();
-    })();
-  }, []);
-
-  useEffect(() => {
     const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
     if (!meta) return;
     const updated = getAndroidPatchedViewportContent(navigator.userAgent, meta.content);
@@ -226,7 +216,6 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
               {children}
               <CommandPalette />
               <AtmosphereOverlay />
-              <PassphrasePrompt />
             </div>
             <AppLockDialog />
             <TelemetryConsentDialog
