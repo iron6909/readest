@@ -17,7 +17,6 @@ import type { ProgressPayload } from '@/utils/transfer';
  */
 
 const routing = vi.hoisted(() => ({
-  readestEnabled: true,
   backends: [] as ('webdav' | 'gdrive' | 's3' | 'onedrive')[],
 }));
 
@@ -39,7 +38,6 @@ vi.mock('@/hooks/useTranslation', () => ({
 }));
 
 vi.mock('@/services/sync/cloudSyncProvider', () => ({
-  isReadestCloudEnabled: () => routing.readestEnabled,
   getActiveFileSyncBackends: () => routing.backends,
 }));
 
@@ -81,13 +79,11 @@ const setup = () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  routing.readestEnabled = true;
   routing.backends = [];
 });
 
 describe('useBookTransferActions upload routing (issue #5062)', () => {
-  it('reaches every enabled destination when Readest Cloud and a file backend are both on', async () => {
-    routing.readestEnabled = true;
+  it('uploads to enabled user-owned file backends without queueing Readest Cloud', async () => {
     routing.backends = ['gdrive'];
 
     const { result } = setup();
@@ -95,12 +91,11 @@ describe('useBookTransferActions upload routing (issue #5062)', () => {
     const ok = await result.current.handleBookUpload(book);
 
     expect(runFileBookUpload).toHaveBeenCalledWith(envConfig, book);
-    expect(queueUpload).toHaveBeenCalledWith(book, 1);
+    expect(queueUpload).not.toHaveBeenCalled();
     expect(ok).toBe(true);
   });
 
   it('toasts "turn on a provider" and returns false when nothing is enabled', async () => {
-    routing.readestEnabled = false;
     routing.backends = [];
     const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
 
@@ -121,21 +116,19 @@ describe('useBookTransferActions upload routing (issue #5062)', () => {
 });
 
 describe('useBookTransferActions download routing (issue #5062)', () => {
-  it('uses the native (queue-backed) path when the book is already in Readest Cloud storage', async () => {
-    routing.readestEnabled = true;
+  it('downloads from a file backend even when legacy uploadedAt is present', async () => {
     routing.backends = ['webdav'];
 
     const { result } = setup();
     const book = makeBook({ uploadedAt: 12345 });
     const ok = await result.current.handleBookDownload(book, { queued: true });
 
-    expect(runFileBookDownload).not.toHaveBeenCalled();
-    expect(queueDownload).toHaveBeenCalledWith(book, 1);
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(queueDownload).not.toHaveBeenCalled();
     expect(ok).toBe(true);
   });
 
   it('falls back to a file backend when the book is not in Readest Cloud storage', async () => {
-    routing.readestEnabled = true;
     routing.backends = ['webdav'];
 
     const { result, updateBook } = setup();

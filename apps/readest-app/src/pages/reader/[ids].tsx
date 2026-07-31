@@ -1,5 +1,4 @@
 import { useRouter } from 'next/router';
-import { AuthProvider } from '@/context/AuthContext';
 import { EnvProvider } from '@/context/EnvContext';
 import { CSPostHogProvider } from '@/context/PHContext';
 import Reader from '@/app/reader/components/Reader';
@@ -10,9 +9,7 @@ export default function Page() {
   return (
     <CSPostHogProvider>
       <EnvProvider>
-        <AuthProvider>
-          <Reader ids={ids} />
-        </AuthProvider>
+        <Reader ids={ids} />
       </EnvProvider>
     </CSPostHogProvider>
   );

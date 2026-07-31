@@ -5,7 +5,6 @@ import posthog from 'posthog-js';
 import i18n from '@/i18n/i18n';
 import { useEffect, useState } from 'react';
 import { IconContext } from 'react-icons';
-import { AuthProvider } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { CSPostHogProvider } from '@/context/PHContext';
 import { initSystemThemeListener, loadDataTheme } from '@/store/themeStore';
@@ -217,29 +216,27 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <CSPostHogProvider>
-      <AuthProvider>
-        <IconContext.Provider value={{ size: `${iconSize}px` }}>
-          <DropdownProvider>
-            <CommandPaletteProvider>
-              <div
-                aria-hidden={appShellHidden}
-                style={appShellHidden ? { display: 'none' } : undefined}
-              >
-                {children}
-                <CommandPalette />
-                <AtmosphereOverlay />
-                <PassphrasePrompt />
-              </div>
-              <AppLockDialog />
-              <TelemetryConsentDialog
-                open={showTelemetryConsent}
-                onClose={() => setShowTelemetryConsent(false)}
-              />
-              {showAppLockScreen && <AppLockScreen />}
-            </CommandPaletteProvider>
-          </DropdownProvider>
-        </IconContext.Provider>
-      </AuthProvider>
+      <IconContext.Provider value={{ size: `${iconSize}px` }}>
+        <DropdownProvider>
+          <CommandPaletteProvider>
+            <div
+              aria-hidden={appShellHidden}
+              style={appShellHidden ? { display: 'none' } : undefined}
+            >
+              {children}
+              <CommandPalette />
+              <AtmosphereOverlay />
+              <PassphrasePrompt />
+            </div>
+            <AppLockDialog />
+            <TelemetryConsentDialog
+              open={showTelemetryConsent}
+              onClose={() => setShowTelemetryConsent(false)}
+            />
+            {showAppLockScreen && <AppLockScreen />}
+          </CommandPaletteProvider>
+        </DropdownProvider>
+      </IconContext.Provider>
     </CSPostHogProvider>
   );
 };

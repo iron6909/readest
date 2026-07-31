@@ -9,7 +9,6 @@ vi.mock('@/services/environment', async (orig) => {
   return { ...actual, isTauriAppPlatform: () => true };
 });
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: {}, envConfig: {} }) }));
-vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (k: string) => k }));
 // Clip pipeline collaborators — should never be reached for share links; stub
 // so an accidental article-clip can't blow up the test environment.

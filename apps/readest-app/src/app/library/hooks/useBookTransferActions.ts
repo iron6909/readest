@@ -6,11 +6,7 @@ import type { ProgressPayload } from '@/utils/transfer';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
-import { transferManager } from '@/services/transferManager';
-import {
-  getActiveFileSyncBackends,
-  isReadestCloudEnabled,
-} from '@/services/sync/cloudSyncProvider';
+import { getActiveFileSyncBackends } from '@/services/sync/cloudSyncProvider';
 import { runFileBookDownload, runFileBookUpload } from '@/services/sync/file/runLibrarySync';
 
 interface BookDownloadOptions {
@@ -28,9 +24,9 @@ interface BookDownloadOptions {
  */
 export const useBookTransferActions = (
   envConfig: EnvConfigType,
-  appService: AppService | null,
+  _appService: AppService | null,
   updateBook: (envConfig: EnvConfigType, book: Book) => Promise<void>,
-  updateBookTransferProgress: (bookHash: string, progress: ProgressPayload) => void,
+  _updateBookTransferProgress: (bookHash: string, progress: ProgressPayload) => void,
 ) => {
   const _ = useTranslation();
 
@@ -38,23 +34,7 @@ export const useBookTransferActions = (
     async (book: Book, _syncBooks = true) => {
       const settingsNow = useSettingsStore.getState().settings;
       const backends = getActiveFileSyncBackends(settingsNow);
-      const readest = isReadestCloudEnabled(settingsNow);
-
-      // An explicit Upload must reach EVERY destination the user selected
-      // (#5062), not just the first one.
       const pushed = backends.length > 0 ? await runFileBookUpload(envConfig, book) : false;
-      // Readest Cloud uploads go through the transfer queue (resumable, with its
-      // own progress panel), so it reports "queued", not "uploaded".
-      const queued = readest ? !!transferManager.queueUpload(book, 1) : false;
-
-      if (queued) {
-        eventDispatcher.dispatch('toast', {
-          type: 'info',
-          timeout: 2000,
-          message: _('Upload queued: {{title}}', { title: book.title }),
-        });
-        return true;
-      }
       if (pushed) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
@@ -65,10 +45,10 @@ export const useBookTransferActions = (
       }
       // An explicit Upload action must never silently no-op.
       eventDispatcher.dispatch('toast', {
-        type: backends.length > 0 || readest ? 'error' : 'info',
+        type: backends.length > 0 ? 'error' : 'info',
         timeout: 5000,
         message:
-          backends.length > 0 || readest
+          backends.length > 0
             ? _('Failed to upload book: {{title}}', { title: book.title })
             : _('Turn on a provider in Cloud Sync settings to upload this book'),
       });
@@ -80,14 +60,10 @@ export const useBookTransferActions = (
 
   const handleBookDownload = useCallback(
     async (book: Book, downloadOptions: BookDownloadOptions = {}) => {
-      const { redownload = false, queued = false } = downloadOptions;
+      void downloadOptions;
       const settingsNow = useSettingsStore.getState().settings;
       const backends = getActiveFileSyncBackends(settingsNow);
-      const readest = isReadestCloudEnabled(settingsNow);
-      // Prefer Readest Cloud when the book is actually in its storage — that is
-      // the resumable, queue-backed path. Otherwise fetch it from a file mirror.
-      const useFileBackend = backends.length > 0 && !(readest && book.uploadedAt);
-      if (useFileBackend) {
+      if (backends.length > 0) {
         const ok = await runFileBookDownload(envConfig, book);
         if (ok) await updateBook(envConfig, book);
         eventDispatcher.dispatch('toast', {
@@ -100,47 +76,15 @@ export const useBookTransferActions = (
         return ok;
       }
 
-      if (redownload || !queued) {
-        try {
-          await appService?.downloadBook(book, false, redownload, (progress) => {
-            updateBookTransferProgress(book.hash, progress);
-          });
-          await updateBook(envConfig, book);
-          eventDispatcher.dispatch('toast', {
-            type: 'info',
-            timeout: 2000,
-            message: _('Book downloaded: {{title}}', {
-              title: book.title,
-            }),
-          });
-          return true;
-        } catch {
-          eventDispatcher.dispatch('toast', {
-            message: _('Failed to download book: {{title}}', {
-              title: book.title,
-            }),
-            type: 'error',
-          });
-          return false;
-        }
-      }
-
-      // Use transfer queue for normal downloads - priority 1 for manual downloads
-      const transferId = transferManager.queueDownload(book, 1);
-      if (transferId) {
-        eventDispatcher.dispatch('toast', {
-          type: 'info',
-          timeout: 2000,
-          message: _('Download queued: {{title}}', {
-            title: book.title,
-          }),
-        });
-        return true;
-      }
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        timeout: 5000,
+        message: _('Turn on a provider in Cloud Sync settings to download this book'),
+      });
       return false;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [appService],
+    [],
   );
 
   return { handleBookUpload, handleBookDownload };

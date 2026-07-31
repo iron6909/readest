@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -78,7 +77,6 @@ async function convertSharedHtml(url: string, htmlFile: string): Promise<Convert
 export function useClipUrlIngress() {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { user } = useAuth();
   const inflight = useRef<Set<string>>(new Set());
 
   const clipAndImport = useCallback(
@@ -111,7 +109,7 @@ export function useClipUrlIngress() {
         const { settings } = useSettingsStore.getState();
         const ingested = await ingestFile(
           { file: book.file, books: library, forceUpload: true },
-          { appService, settings, isLoggedIn: !!user },
+          { appService, settings, isLoggedIn: false },
         );
         if (!ingested) {
           throw new Error('Import produced no book');
@@ -146,7 +144,7 @@ export function useClipUrlIngress() {
         inflight.current.delete(url);
       }
     },
-    [_, appService, envConfig, user],
+    [_, appService, envConfig],
   );
 
   // Deep-link path (existing).

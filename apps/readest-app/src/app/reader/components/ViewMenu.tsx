@@ -1,12 +1,11 @@
 import clsx from 'clsx';
 import React, { useEffect } from 'react';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline } from 'react-icons/md';
 import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
-import { MdSync, MdSyncProblem } from 'react-icons/md';
+import { MdSync } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
@@ -20,14 +19,12 @@ import {
   CONTRAST_STEP,
 } from '@/services/constants';
 import { useEnv } from '@/context/EnvContext';
-import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
-import { navigateToLogin } from '@/utils/nav';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
@@ -49,8 +46,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   onShowMetaHashDialog,
 }) => {
   const _ = useTranslation();
-  const router = useRouter();
-  const { user } = useAuth();
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
   const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
@@ -109,12 +104,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   };
 
   const handleSync = () => {
-    if (!user) {
-      navigateToLogin(router);
-      setIsDropdownOpen?.(false);
-    } else {
-      eventDispatcher.dispatch('sync-book-progress', { bookKey });
-    }
+    eventDispatcher.dispatch('sync-book-progress', { bookKey });
   };
 
   const handleStartRSVP = () => {
@@ -405,16 +395,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <MenuItem
         label={
-          !user
-            ? _('Sign in to Sync')
-            : lastSyncTime
-              ? _('Synced {{time}}', {
-                  time: dayjs(lastSyncTime).fromNow(),
-                })
-              : _('Never synced')
+          lastSyncTime
+            ? _('Synced {{time}}', { time: dayjs(lastSyncTime).fromNow() })
+            : _('Never synced')
         }
-        Icon={user ? MdSync : MdSyncProblem}
-        iconClassName={user && viewState?.syncing ? 'animate-reverse-spin' : ''}
+        Icon={MdSync}
+        iconClassName={viewState?.syncing ? 'animate-reverse-spin' : ''}
         onClick={handleSync}
         siblings={
           <button
