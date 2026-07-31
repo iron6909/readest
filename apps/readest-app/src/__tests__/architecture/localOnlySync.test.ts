@@ -14,4 +14,11 @@ describe('local-only sync architecture', () => {
       'useNotesSync',
     );
   });
+
+  test('does not expose Readest-hosted integrations', () => {
+    const integrations = source('src/components/settings/IntegrationsPanel.tsx');
+    expect(integrations).not.toContain("title={_('Readest Cloud')}");
+    expect(integrations).not.toContain("title={_('Send to Readest')}");
+    expect(integrations).not.toContain('SendToReadestForm');
+  });
 });
