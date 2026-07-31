@@ -32,7 +32,10 @@ import OneDriveForm from './integrations/OneDriveForm';
 import S3Form from './integrations/S3Form';
 import { persistCloudProviderEnabled } from './integrations/cloudSync';
 import { canToggleCloudProvider, getThirdPartyRowStatus } from './integrations/cloudSyncStatus';
-import { resolveCloudSyncGate, settingsKeyForBackend } from '@/services/sync/cloudSyncProvider';
+import {
+  getEnabledFileSyncBackends,
+  settingsKeyForBackend,
+} from '@/services/sync/cloudSyncProvider';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import { canBackendRun } from '@/services/sync/file/runLibrarySync';
 import SubPageHeader from './SubPageHeader';
@@ -290,8 +293,7 @@ const IntegrationsPanel: React.FC = () => {
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
 
   // Every configured third-party provider can sync independently.
-  const cloudGate = resolveCloudSyncGate(settings);
-  const enabledBackends = cloudGate.backends;
+  const enabledBackends = getEnabledFileSyncBackends(settings);
 
   /** Book files have a home when another enabled backend uploads them. */
   const booksBackedUpBy = (kind: FileSyncBackendKind): boolean =>

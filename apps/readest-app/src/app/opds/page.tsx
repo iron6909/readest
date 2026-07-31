@@ -16,7 +16,6 @@ import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
-import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
 import { eventDispatcher } from '@/utils/event';
@@ -132,7 +131,6 @@ export default function BrowserPage() {
   const searchTermRef = useRef('');
 
   useTheme({ systemUIVisible: false });
-  useTransferQueue(libraryLoaded);
 
   useEffect(() => {
     startURLRef.current = state.startURL;

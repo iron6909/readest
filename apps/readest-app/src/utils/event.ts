@@ -81,7 +81,7 @@ export const eventDispatcher = new EventDispatcher();
 // settled yet.
 //
 // Use case: boot-readiness signals like "replica-sync-ready" or
-// "transferManager-ready" where late subscribers must still observe
+// readiness events where late subscribers must still observe
 // that the milestone happened. The plain eventDispatcher fires-and-
 // forgets, so a listener that subscribes after dispatch misses it
 // forever.

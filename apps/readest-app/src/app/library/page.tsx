@@ -44,7 +44,6 @@ import { useBookTransferActions } from './hooks/useBookTransferActions';
 import { useAutoImportFolders } from './hooks/useAutoImportFolders';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useTransferStore } from '@/store/transferStore';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { getLibraryViewSettings } from '@/helpers/settings';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
@@ -80,7 +79,6 @@ import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { BackupWindow } from './components/BackupWindow';
 import { CacheManagerWindow } from './components/CacheManagerWindow';
 import { useDragDropImport } from './hooks/useDragDropImport';
-import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { Toast } from '@/components/Toast';
 import {
@@ -109,8 +107,6 @@ import useShortcuts from '@/hooks/useShortcuts';
 import { useCustomFonts } from '@/hooks/useCustomFonts';
 import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
-import ModalPortal from '@/components/ModalPortal';
-import TransferQueuePanel from './components/TransferQueuePanel';
 
 /** Skip tiny non-book artifacts during folder auto-scan (matches the manual import dialog default). */
 const AUTO_IMPORT_MIN_SIZE_BYTES = 20 * 1024;
@@ -177,12 +173,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { clearBookData } = useBookDataStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
-  // Field selector, not `const { isTransferQueueOpen } = useTransferStore()`:
-  // a whole-store subscription re-renders the entire library tree on every
-  // transfer progress tick (~10/sec per active upload), freezing the app
-  // during a bulk cloud upload (issue #5047).
-  const isTransferQueueOpen = useTransferStore((state) => state.isTransferQueueOpen);
-
   // Hydrate the custom-font store from persisted settings so the Font
   // panel sees imported fonts even when opened straight from the
   // library — the replica pull above is auth-gated and the reader's
@@ -286,7 +276,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useOpenBookLink();
   useReadingWidget();
   useClipUrlIngress();
-  useTransferQueue(libraryLoaded);
 
   const { pullLibrary, pushLibrary } = useBooksSync();
   // Library-scoped auto-sync for the active third-party cloud provider (WebDAV /
@@ -1631,11 +1620,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookPurge={handleBookDelete('purge')}
           handleBookMetadataUpdate={handleUpdateMetadata}
         />
-      )}
-      {isTransferQueueOpen && (
-        <ModalPortal>
-          <TransferQueuePanel />
-        </ModalPortal>
       )}
       <AboutWindow />
       <KeyboardShortcutsHelp />

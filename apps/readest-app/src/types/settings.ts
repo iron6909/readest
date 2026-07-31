@@ -239,17 +239,6 @@ export interface OneDriveSettings {
  *
  * Device-local, like the other providers' `enabled` flags.
  */
-export interface ReadestCloudSettings {
-  enabled?: boolean;
-  /**
-   * Device-local wall-clock millis of when this device turned Readest Cloud
-   * off. Anchors the mixed-fleet probe: a native /api/sync row newer than this
-   * means another device is still writing the channels this one stopped
-   * writing. Excluded from cross-device restore.
-   */
-  disabledAt?: number;
-}
-
 /**
  * User-facing sync categories. 'progress' gates the existing book-config
  * (reading progress) sync, 'note' gates annotations, 'book' gates book
@@ -418,8 +407,6 @@ export interface SystemSettings {
   kosync: KOSyncSettings;
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
-  /** Optional by design — see {@link ReadestCloudSettings}. Never defaulted. */
-  readestCloud?: ReadestCloudSettings;
   webdav: WebDAVSettings;
   googleDrive: GoogleDriveSettings;
   s3: S3Settings;

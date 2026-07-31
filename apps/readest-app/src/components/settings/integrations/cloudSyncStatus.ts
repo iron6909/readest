@@ -7,20 +7,6 @@ import type { TranslationFunc } from '@/hooks/useTranslation';
  * the call site.
  */
 
-export interface ReadestRowInputs {
-  signedIn: boolean;
-  /** Plan still resolving from the JWT (signed-in only). */
-  planLoading: boolean;
-  /** Readest Cloud syncs the library on this device. */
-  enabled: boolean;
-}
-
-export const getReadestCloudRowStatus = (_: TranslationFunc, s: ReadestRowInputs): string => {
-  if (!s.signedIn) return _('Not signed in');
-  if (s.planLoading) return '…';
-  return s.enabled ? _('Active') : _('Off');
-};
-
 export interface ThirdPartyRowInputs {
   enabled: boolean;
   configured: boolean;
@@ -31,7 +17,7 @@ export interface ThirdPartyRowInputs {
   syncBooks: boolean;
   /**
    * Some OTHER enabled provider takes the book files (another backend with
-   * syncBooks on, or Readest Cloud). Providers are no longer exclusive (#5062),
+   * syncBooks on). Providers are not exclusive,
    * so "this one does not upload book files" is only alarming when nothing else
    * does.
    */

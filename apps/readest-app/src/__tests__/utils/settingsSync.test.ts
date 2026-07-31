@@ -31,7 +31,6 @@ import {
 const local = {
   webdav: { enabled: false, password: 'secret' },
   googleDrive: { enabled: false },
-  readestCloud: { enabled: true },
   globalViewSettings: {},
   globalReadSettings: {},
 } as unknown as SystemSettings;
@@ -41,31 +40,18 @@ const globals = {
   globalReadSettings: {} as SystemSettings['globalReadSettings'],
 };
 
-describe('mergeSyncedGlobalSettings: readestCloud', () => {
-  test('adopts a broadcast Readest Cloud switch-off', () => {
+describe('mergeSyncedGlobalSettings: file providers', () => {
+  test('adopts file provider flags without broadcasting credentials', () => {
     const merged = mergeSyncedGlobalSettings(local, {
       ...globals,
       cloudSyncProviders: {
         webdav: { enabled: true },
         googleDrive: { enabled: false },
-        readestCloud: { enabled: false, disabledAt: 1234 },
       },
     });
-    expect(merged.readestCloud?.enabled).toBe(false);
-    expect(merged.readestCloud?.disabledAt).toBe(1234);
+    expect(merged.webdav.enabled).toBe(true);
     // Credentials never ride the wire, and the local copy is preserved.
     expect(merged.webdav.password).toBe('secret');
-  });
-
-  test('a payload without readestCloud leaves the local value untouched', () => {
-    const merged = mergeSyncedGlobalSettings(local, {
-      ...globals,
-      cloudSyncProviders: {
-        webdav: { enabled: true },
-        googleDrive: { enabled: false },
-      },
-    });
-    expect(merged.readestCloud?.enabled).toBe(true);
   });
 });
 
@@ -95,7 +81,7 @@ function makeFullSettings(overrides: Partial<SystemSettings> = {}): SystemSettin
   } as SystemSettings;
 }
 
-describe('broadcastGlobalSettings: readestCloud in the emitted payload', () => {
+describe('broadcastGlobalSettings: file provider flags', () => {
   beforeEach(() => {
     vi.mocked(emit).mockClear();
   });
@@ -105,41 +91,14 @@ describe('broadcastGlobalSettings: readestCloud in the emitted payload', () => {
     return call![1] as SettingsSyncPayload;
   };
 
-  test('omits the readestCloud key entirely when settings has no readestCloud slice', async () => {
+  test('emits the provider flags', async () => {
     const settings = makeFullSettings();
-    expect(settings.readestCloud).toBeUndefined();
 
     await broadcastGlobalSettings(settings, { includeCloudSyncProviders: true });
 
     const payload = capturePayload();
     expect(payload.cloudSyncProviders).toBeDefined();
-    // A key present with value `undefined` is NOT the same as an absent key:
-    // the receiving window's merge only touches `readestCloud` `if
-    // (payload.cloudSyncProviders.readestCloud)`, so an explicit `{ enabled:
-    // undefined }` would still be truthy and would clobber the receiver.
-    expect('readestCloud' in payload.cloudSyncProviders!).toBe(false);
-  });
-
-  test('carries enabled:false and disabledAt faithfully', async () => {
-    const settings = makeFullSettings({
-      readestCloud: { enabled: false, disabledAt: 1234 },
-    });
-
-    await broadcastGlobalSettings(settings, { includeCloudSyncProviders: true });
-
-    const payload = capturePayload();
-    expect(payload.cloudSyncProviders?.readestCloud).toEqual({ enabled: false, disabledAt: 1234 });
-  });
-
-  test('carries enabled:true', async () => {
-    const settings = makeFullSettings({
-      readestCloud: { enabled: true },
-    });
-
-    await broadcastGlobalSettings(settings, { includeCloudSyncProviders: true });
-
-    const payload = capturePayload();
-    expect(payload.cloudSyncProviders?.readestCloud?.enabled).toBe(true);
+    expect(payload.cloudSyncProviders?.webdav.enabled).toBe(false);
   });
 
   test('never carries credentials or lastSyncedAt', async () => {
@@ -150,7 +109,6 @@ describe('broadcastGlobalSettings: readestCloud in the emitted payload', () => {
         password: 'hunter2',
         lastSyncedAt: 999,
       },
-      readestCloud: { enabled: true },
     });
 
     await broadcastGlobalSettings(settings, { includeCloudSyncProviders: true });
