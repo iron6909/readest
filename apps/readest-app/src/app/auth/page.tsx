@@ -25,7 +25,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { handleAuthCallback, parseOAuthCallbackUrl } from '@/helpers/auth';
 import { getUserProfilePlan } from '@/utils/access';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
-import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
+import { authWithCustomTab, authWithSafari } from '@/services/sync/providers/oauth/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
 import { ProviderLogin, type OAuthProvider } from './components/ProviderLogin';
 
