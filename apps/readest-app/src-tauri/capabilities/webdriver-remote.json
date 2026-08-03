@@ -23,7 +23,6 @@
     "allow-parse-mobi-metadata",
     "allow-extract-mobi-cover-full",
     "allow-auth-with-safari",
-    "allow-start-apple-sign-in",
     "allow-set-traffic-lights",
     "allow-show-lookup-popover",
     "allow-update-book-presence",
