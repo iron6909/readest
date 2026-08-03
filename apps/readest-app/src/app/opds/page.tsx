@@ -8,7 +8,7 @@ import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from 'foliate-j
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useEnv } from '@/context/EnvContext';
 import { isWebAppPlatform } from '@/services/environment';
-import { downloadFile } from '@/libs/storage';
+import { downloadFromUrl } from '@/libs/directDownload';
 import { Toast } from '@/components/Toast';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -589,10 +589,9 @@ export default function BrowserPage() {
           let dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
           console.log('Downloading to:', url, dstFilePath);
 
-          const responseHeaders = await downloadFile({
+          const responseHeaders = await downloadFromUrl({
             appService,
             dst: dstFilePath,
-            cfp: '',
             url: downloadUrl,
             headers,
             singleThreaded: true,
@@ -691,10 +690,9 @@ export default function BrowserPage() {
             downloadUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
           }
         }
-        await downloadFile({
+        await downloadFromUrl({
           appService,
           dst: cachedPath,
-          cfp: '',
           url: downloadUrl,
           singleThreaded: true,
           skipSslVerification: true,

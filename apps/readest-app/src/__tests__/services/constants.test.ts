@@ -13,7 +13,6 @@ vi.mock('@/utils/misc', () => ({
 import {
   DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
-  CLOUD_BOOKS_SUBDIR,
   LOCAL_FONTS_SUBDIR,
   LOCAL_IMAGES_SUBDIR,
   SETTINGS_FILENAME,
@@ -104,10 +103,6 @@ describe('services/constants', () => {
 
     it('LOCAL_BOOKS_SUBDIR contains DATA_SUBDIR', () => {
       expect(LOCAL_BOOKS_SUBDIR).toContain(DATA_SUBDIR);
-    });
-
-    it('CLOUD_BOOKS_SUBDIR contains DATA_SUBDIR', () => {
-      expect(CLOUD_BOOKS_SUBDIR).toContain(DATA_SUBDIR);
     });
 
     it('LOCAL_FONTS_SUBDIR contains DATA_SUBDIR', () => {

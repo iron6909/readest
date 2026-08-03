@@ -1,5 +1,5 @@
 import { isWebAppPlatform } from '@/services/environment';
-import { downloadFile } from '@/libs/storage';
+import { downloadFromUrl } from '@/libs/directDownload';
 import type { AppService } from '@/types/system';
 import type { ProgressHandler } from '@/utils/transfer';
 import { webDownload } from '@/utils/transfer';
@@ -48,11 +48,10 @@ const ensureStoreDir = async (appService: AppService): Promise<void> => {
 };
 
 // Type of the (injectable) Rust-backed downloader, matching libs/storage's
-// `downloadFile`. Injected so the temp-file path can be unit-tested.
+// `downloadFromUrl`. Injected so the temp-file path can be unit-tested.
 type DownloadFileFn = (params: {
   appService: AppService;
   dst: string;
-  cfp: string;
   url: string;
   onProgress?: ProgressHandler;
   singleThreaded?: boolean;
@@ -79,7 +78,7 @@ export const downloadViaTempFile = async (
   crypto.getRandomValues(ids);
   const tmpRel = `${STORE_DIR}/.dl-${ids[0]!.toString(36)}.tmp`;
   const dst = await appService.resolveFilePath(tmpRel, 'Data'); // ABSOLUTE path under Data
-  await downloadFileFn({ appService, dst, cfp: dst, url, onProgress, singleThreaded: true });
+  await downloadFileFn({ appService, dst, url, onProgress, singleThreaded: true });
   try {
     return (await appService.readFile(dst, 'None', 'binary')) as ArrayBuffer;
   } finally {
@@ -105,7 +104,7 @@ export const defaultDownloader = async (
     const { blob } = await webDownload(url, onProgress);
     return await blob.arrayBuffer();
   }
-  return downloadViaTempFile(appService, downloadFile, url, onProgress);
+  return downloadViaTempFile(appService, downloadFromUrl, url, onProgress);
 };
 
 const getDownloader =

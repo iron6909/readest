@@ -14,8 +14,8 @@ vi.mock('@tauri-apps/plugin-http', () => ({
   fetch: vi.fn(),
 }));
 
-vi.mock('@/libs/storage', () => ({
-  downloadFile: vi.fn().mockResolvedValue({ 'content-disposition': '' }),
+vi.mock('@/libs/directDownload', () => ({
+  downloadFromUrl: vi.fn().mockResolvedValue({ 'content-disposition': '' }),
 }));
 
 vi.mock('@/app/opds/utils/opdsReq', () => ({
@@ -55,7 +55,7 @@ import { syncSubscribedCatalogs } from '@/services/opds/autoDownload';
 import { checkFeedForNewItems } from '@/services/opds/feedChecker';
 import { saveSubscriptionState, loadSubscriptionState } from '@/services/opds/subscriptionState';
 import { upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
-import { downloadFile } from '@/libs/storage';
+import { downloadFromUrl } from '@/libs/directDownload';
 
 const createMockAppService = () =>
   ({
@@ -161,8 +161,8 @@ describe('OPDS auto-download orchestrator', () => {
 
     await syncSubscribedCatalogs(catalogs, appService, []);
 
-    expect(downloadFile).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(downloadFile).mock.calls[0]![0]).toMatchObject({
+    expect(downloadFromUrl).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(downloadFromUrl).mock.calls[0]![0]).toMatchObject({
       skipSslVerification: true,
     });
   });
@@ -237,7 +237,7 @@ describe('OPDS auto-download orchestrator', () => {
     await syncSubscribedCatalogs(catalogs, appService, []);
 
     // No download should have been attempted while in backoff.
-    expect(downloadFile).not.toHaveBeenCalled();
+    expect(downloadFromUrl).not.toHaveBeenCalled();
 
     // And the saved state must not contain duplicate failedEntries for the
     // same entryId.
@@ -281,6 +281,6 @@ describe('OPDS auto-download orchestrator', () => {
 
     await syncSubscribedCatalogs(catalogs, appService, []);
 
-    expect(downloadFile).toHaveBeenCalledTimes(1);
+    expect(downloadFromUrl).toHaveBeenCalledTimes(1);
   });
 });
