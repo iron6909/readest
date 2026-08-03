@@ -279,7 +279,6 @@ async function translateChunk(
 export const yandexProvider: TranslationProvider = {
   name: 'yandex',
   label: _('Yandex Translate'),
-  authRequired: false,
   get disabled() {
     return !isTauriAppPlatform();
   },

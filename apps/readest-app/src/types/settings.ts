@@ -225,21 +225,6 @@ export interface OneDriveSettings {
 }
 
 /**
- * Readest Cloud's own library-sync switch. Readest Cloud used to be the
- * derived fallback — "on" whenever no third-party provider was enabled —
- * because exactly one provider could own the library channels. Providers are
- * now independently selectable (#5062), so Readest Cloud needs a flag of its
- * own.
- *
- * `enabled` is DELIBERATELY optional with no default (this slice must never
- * enter `DEFAULT_SYSTEM_SETTINGS`): an absent value falls back to the old
- * derivation, so upgrading users keep exactly the behaviour they had and no
- * migration has to rewrite anyone's settings. It is written only once the user
- * touches a Cloud Sync checkbox.
- *
- * Device-local, like the other providers' `enabled` flags.
- */
-/**
  * User-facing sync categories. 'progress' gates the existing book-config
  * (reading progress) sync, 'note' gates annotations, 'book' gates book
  * binaries + metadata, 'dictionary' gates the imported-dictionary replica

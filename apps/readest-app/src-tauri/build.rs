@@ -41,7 +41,6 @@ fn main() {
             "parse_mobi_metadata",
             "extract_mobi_cover_full",
             "auth_with_safari",
-            "start_apple_sign_in",
             "set_traffic_lights",
             "show_lookup_popover",
             "update_book_presence",

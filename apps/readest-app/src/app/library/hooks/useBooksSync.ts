@@ -9,8 +9,6 @@ import { runFileLibrarySyncPass } from '@/services/sync/file/runLibrarySync';
 
 /**
  * Runs the user-configured file-sync backends for every library sync surface.
- * Readest Cloud rows and account-backed book replication are intentionally not
- * part of the local-first application.
  */
 export const useBooksSync = () => {
   const _ = useTranslation();

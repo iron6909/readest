@@ -128,9 +128,8 @@ export abstract class BaseAppService implements AppService {
   }
 
   /**
-   * Users with WebDAV/Drive already enabled had native Readest Cloud uploads
-   * gated off when cloud sync provider selection shipped; flip syncBooks on
-   * once for every enabled third-party backend so their books keep backing up
+   * Users with WebDAV/Drive already enabled may still have syncBooks disabled;
+   * flip it on once for every enabled backend so their books keep backing up
    * somewhere. This force-enables syncBooks a single time even for a user who
    * had explicitly turned it off — intentional, since the alternative is books
    * backing up nowhere. Mutates the caller's settings snapshot, which the

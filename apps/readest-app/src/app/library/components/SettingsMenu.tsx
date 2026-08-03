@@ -227,9 +227,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
   const savedBookCoverDescription = `💾 ${coverDir}/last-book-cover.png`;
 
-  // The sync row reports the health of whatever the user selected. Native
-  // cursors freeze while Readest Cloud is off (the book/progress/note channels
-  // are gated), so the file engine's timestamps have to stand in.
+  // The sync row reports the health of the user-owned providers selected.
   // Only the providers that can ACTUALLY sync right now. A web Google Drive whose
   // token expired is still enabled but silently skipped, so it must not be counted
   // as active or reported as synced (it would otherwise inflate the count and lend

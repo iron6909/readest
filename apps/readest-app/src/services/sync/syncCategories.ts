@@ -1,5 +1,5 @@
 /**
- * Per-account sync category gating.
+ * Per-provider sync category gating.
  *
  * The user toggles each category on/off in the User → Manage Sync
  * (a.k.a. Data Sync) panel. Disabling a category stops the device
@@ -102,13 +102,8 @@ export const isSyncCategoryLocked = (category: SyncCategory): boolean => {
 };
 
 /**
- * Book-data categories gated on the Readest Cloud switch (#4380). Providers
- * are independently selectable (#5062): these categories ride the native
- * channels whenever Readest Cloud is switched on, and any enabled file
- * backend mirrors them in parallel through library.json + config.json. Only
- * an unchecked Readest Cloud gates the native rows off. Account-level
- * categories (settings, stats, dictionaries, fonts, textures, OPDS catalogs)
- * have no file-based counterpart and always stay native.
+ * Category switches apply to data mirrored through the enabled user-owned
+ * file backends. Unknown categories remain enabled for compatibility.
  */
 export const isSyncCategoryEnabled = (id: string): boolean => {
   const category = toCategory(id);

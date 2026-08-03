@@ -75,7 +75,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
 
   const handleProviderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const requestedProvider = event.target.value;
-    const availableTranslators = getTranslators().filter((t) => isTranslatorAvailable(t, false));
+    const availableTranslators = getTranslators().filter(isTranslatorAvailable);
     const selectedTranslator =
       availableTranslators.find((t) => t.name === requestedProvider) || availableTranslators[0]!;
     if (selectedTranslator) {
@@ -88,7 +88,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   useEffect(() => {
     const availableProviders = translators.map((t) => ({
       name: t.name,
-      label: getTranslatorDisplayLabel(t, false, _),
+      label: getTranslatorDisplayLabel(t),
       disabled: !!t.disabled,
     }));
     setProviders(availableProviders);

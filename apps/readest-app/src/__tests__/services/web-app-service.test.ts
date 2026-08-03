@@ -55,11 +55,6 @@ vi.mock('@/services/bookService', () => ({
 
 vi.mock('@/services/cloudService', () => ({
   deleteBook: vi.fn().mockResolvedValue(undefined),
-  uploadFileToCloud: vi.fn().mockResolvedValue(undefined),
-  uploadBook: vi.fn().mockResolvedValue(undefined),
-  downloadCloudFile: vi.fn().mockResolvedValue(undefined),
-  downloadBookCovers: vi.fn().mockResolvedValue(undefined),
-  downloadBook: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/services/fontService', () => ({

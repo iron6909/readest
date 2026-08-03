@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  ErrorCodes,
   getTranslator,
   getTranslators,
   isTranslatorAvailable,
@@ -8,9 +7,7 @@ import {
 } from '@/services/translators';
 import { getFromCache, storeInCache, UseTranslatorOptions } from '@/services/translators';
 import { polish, preprocess } from '@/services/translators';
-import { eventDispatcher } from '@/utils/event';
 import { getLocale } from '@/utils/misc';
-import { useTranslation } from './useTranslation';
 
 export function useTranslator({
   provider = 'deepl',
@@ -19,7 +16,6 @@ export function useTranslator({
   enablePolishing = true,
   enablePreprocessing = true,
 }: UseTranslatorOptions = {}) {
-  const _ = useTranslation();
   const [loading, setLoading] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(provider);
   const [translator, setTransltor] = useState(() => getTranslator(provider));
@@ -30,7 +26,7 @@ export function useTranslator({
   }, [provider, sourceLang, targetLang]);
 
   useEffect(() => {
-    const availableTranslators = getTranslators().filter((t) => isTranslatorAvailable(t, false));
+    const availableTranslators = getTranslators().filter(isTranslatorAvailable);
     const selectedTranslator =
       availableTranslators.find((t) => t.name === provider) || availableTranslators[0]!;
     const selectedProviderName = selectedTranslator.name as TranslatorName;
@@ -140,16 +136,6 @@ export function useTranslator({
         setLoading(false);
         return enablePolishing ? polish(results, targetLanguage) : results;
       } catch (err) {
-        if (err instanceof Error && err.message.includes(ErrorCodes.DAILY_QUOTA_EXCEEDED)) {
-          eventDispatcher.dispatch('toast', {
-            timeout: 5000,
-            message: _(
-              'Daily translation quota reached. Upgrade your plan to continue using AI translations.',
-            ),
-            type: 'error',
-          });
-          setSelectedProvider('azure');
-        }
         setLoading(false);
         throw err instanceof Error ? err : new Error(String(err));
       }

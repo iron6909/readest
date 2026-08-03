@@ -136,9 +136,8 @@ export const pullTTSPacks = async (
   }
 };
 
-// The provider pack sync rides: the user's SELECTED third-party file-sync
-// backend, honoring the pause gate (#4959). Readest Cloud is deliberately
-// excluded — packs live on the user's own storage only.
+// Pack sync uses the first selected file backend; packs live only on the
+// user's own storage.
 export const getActiveTTSPackSyncProvider = async (): Promise<FileSyncProvider | null> => {
   try {
     const settings = useSettingsStore.getState().settings;

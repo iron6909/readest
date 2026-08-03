@@ -15,9 +15,8 @@ interface BookDownloadOptions {
 }
 
 /**
- * Explicit per-book Upload/Download routing (#5062) — cloud sync providers are
- * independently selectable, so a book's destinations depend on which of
- * {Readest Cloud, a file backend} are switched on. Extracted out of the huge
+ * Explicit per-book upload/download routing. File-sync providers are
+ * independently selectable, so a book may have several destinations. Extracted out of the huge
  * library page component so this routing (previously untested) can be
  * exercised directly with `renderHook`, the same pattern already used for
  * {@link useBooksSync} and {@link useLibraryFileSync}.

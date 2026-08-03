@@ -139,7 +139,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const getTranslationProviderOptions = () => {
     return getTranslators().map((t) => ({
       value: t.name,
-      label: getTranslatorDisplayLabel(t, false, _),
+      label: getTranslatorDisplayLabel(t),
       // Providers marked `disabled` (e.g. upstream relay is down) stay in the
       // dropdown so users can see them, but cannot be selected.
       disabled: !!t.disabled,
@@ -149,7 +149,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const getCurrentTranslationProviderOption = () => {
     const value = translationProvider;
     const allProviders = getTranslationProviderOptions();
-    const availableTranslators = getTranslators().filter((t) => isTranslatorAvailable(t, false));
+    const availableTranslators = getTranslators().filter(isTranslatorAvailable);
     const currentProvider = availableTranslators.find((t) => t.name === value)
       ? value
       : availableTranslators[0]?.name;

@@ -3,8 +3,6 @@ import { TranslatorName } from './providers';
 export interface TranslationProvider {
   name: string;
   label: string;
-  authRequired?: boolean;
-  quotaExceeded?: boolean;
   /**
    * Marks a provider as temporarily unavailable. Disabled providers are
    * filtered out of `getTranslators()` / `getTranslator()`, so the UI never
@@ -38,6 +36,5 @@ export interface UseTranslatorOptions {
 export const ErrorCodes = {
   UNAUTHORIZED: 'Unauthorized',
   DEEPL_API_ERROR: 'DeepL API Error',
-  DAILY_QUOTA_EXCEEDED: 'Daily Quota Exceeded',
   INTERNAL_SERVER_ERROR: 'Internal Server Error',
 };

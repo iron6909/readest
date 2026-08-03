@@ -6,7 +6,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 export const deeplProvider: TranslationProvider = {
   name: 'deepl',
   label: _('DeepL'),
-  authRequired: false,
   translate: async (
     text: string[],
     sourceLang: string,

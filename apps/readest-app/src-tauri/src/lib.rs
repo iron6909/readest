@@ -420,8 +420,6 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]
-            macos::apple_auth::start_apple_sign_in,
-            #[cfg(target_os = "macos")]
             macos::traffic_light::set_traffic_lights,
             #[cfg(target_os = "macos")]
             macos::system_dictionary::show_lookup_popover,
@@ -493,9 +491,6 @@ pub fn run() {
 
     #[cfg(target_os = "macos")]
     let builder = builder.plugin(macos::safari_auth::init());
-
-    #[cfg(target_os = "ios")]
-    let builder = builder.plugin(tauri_plugin_sign_in_with_apple::init());
 
     #[cfg(any(target_os = "ios", target_os = "android"))]
     let builder = builder.plugin(tauri_plugin_haptics::init());

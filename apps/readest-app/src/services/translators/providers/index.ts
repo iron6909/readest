@@ -47,13 +47,8 @@ export const getTranslators = (): TranslationProvider[] => {
  * render them greyed out, but this predicate excludes them so they can never
  * be chosen or fallen back to.
  */
-export const isTranslatorAvailable = (
-  translator: TranslationProvider,
-  hasToken: boolean,
-): boolean => {
+export const isTranslatorAvailable = (translator: TranslationProvider): boolean => {
   if (translator.disabled) return false;
-  if (translator.quotaExceeded) return false;
-  if (translator.authRequired && !hasToken) return false;
   return true;
 };
 
@@ -64,19 +59,9 @@ export const isTranslatorAvailable = (
  * reason is added. The `_` translation function is passed in so this module
  * stays free of React imports.
  */
-export const getTranslatorDisplayLabel = (
-  translator: TranslationProvider,
-  hasToken: boolean,
-  _: (key: string) => string,
-): string => {
+export const getTranslatorDisplayLabel = (translator: TranslationProvider): string => {
   if (translator.disabled) {
     return `${translator.label}`;
-  }
-  if (translator.authRequired && !hasToken) {
-    return `${translator.label} (${_('Login Required')})`;
-  }
-  if (translator.quotaExceeded) {
-    return `${translator.label} (${_('Quota Exceeded')})`;
   }
   return translator.label;
 };

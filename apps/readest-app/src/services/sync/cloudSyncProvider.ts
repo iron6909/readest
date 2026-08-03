@@ -2,16 +2,9 @@ import type { SystemSettings } from '@/types/settings';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 
 /**
- * The cloud sync provider kind for library data (book files, book rows,
- * progress, notes). 'readest' is the native Readest Cloud; the others are
- * the third-party file-sync backends.
- *
- * Providers are INDEPENDENT (#5062): any subset may sync the library at once,
- * including none. Readest Cloud's flag has a derived default so an absent value
- * reproduces the old exclusive behaviour; every third-party backend is a plain
- * per-device `enabled` flag. Account-level data (settings replicas, reading
- * stats, dictionaries/fonts, translations) always syncs via Readest Cloud while
- * signed in, regardless of this selection.
+ * A user-owned file-sync backend for library data. Any subset may sync the
+ * library at once, including none; each backend has a per-device `enabled`
+ * flag.
  */
 export type CloudSyncProviderKind = FileSyncBackendKind;
 
@@ -45,7 +38,7 @@ export const getEnabledFileSyncBackends = (
   return enabled;
 };
 
-/** Any third-party file-sync backend switched on. */
+/** Any user-owned file-sync backend switched on. */
 export const hasAnyThirdPartyEnabled = (settings: SystemSettings | null | undefined): boolean =>
   getEnabledFileSyncBackends(settings).length > 0;
 
@@ -59,9 +52,9 @@ export const cloudProvidersDisplayName = (kinds: CloudSyncProviderKind[]): strin
   kinds.map(cloudProviderDisplayName).join(', ');
 
 export interface CloudSyncGate {
-  /** Third-party backends the user switched on, in the fixed webdav/gdrive/s3/onedrive order. */
+  /** Backends the user switched on, in the fixed webdav/gdrive/s3/onedrive order. */
   backends: FileSyncBackendKind[];
-  /** Retained for UI compatibility; third-party sync is never plan-paused. */
+  /** Retained for UI compatibility; user-owned sync is never plan-paused. */
   paused: boolean;
 }
 
@@ -74,7 +67,7 @@ export const resolveCloudSyncGate = (
   };
 };
 
-/** The enabled third-party backends that may actually run right now. */
+/** The enabled user-owned backends that may actually run right now. */
 export const getActiveFileSyncBackends = (
   settings: SystemSettings | null | undefined,
 ): FileSyncBackendKind[] => getEnabledFileSyncBackends(settings);
@@ -82,9 +75,8 @@ export const getActiveFileSyncBackends = (
 /**
  * One-time upgrade migration helper (appService migrate20260706): users
  * who already had WebDAV/Drive enabled before provider selection shipped
- * become "third-party selected" on upgrade, which gates native Readest
- * Cloud uploads off — with syncBooks at its old `false` default their
- * books would back up nowhere. Flip syncBooks on for every enabled backend.
+ * may still have syncBooks at its old `false` default. Flip syncBooks on for
+ * every enabled backend so their books continue to be mirrored.
  * Mutates `settings` in place (the migration runner saves the same
  * snapshot afterwards) and returns whether anything changed.
  */
@@ -123,11 +115,3 @@ export const applySyncBooksAutoEnable = (settings: SystemSettings): boolean => {
   }
   return changed;
 };
-
-/**
- * Whether Readest Cloud storage may be written to (book file uploads and the
- * native book/progress/note rows). Now simply "is Readest Cloud switched on" —
- * it no longer means "and nothing else is". A user can mirror to Drive AND keep
- * Readest Cloud; whether book *files* also go to Readest is still governed
- * separately by the Manage Sync "book" toggle and the transfer queue.
- */

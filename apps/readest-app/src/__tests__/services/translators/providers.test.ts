@@ -362,7 +362,6 @@ describe('yandexProvider', () => {
     const { yandexProvider } = await import('@/services/translators/providers/yandex');
     expect(yandexProvider.name).toBe('yandex');
     expect(yandexProvider.label).toBe('Yandex Translate');
-    expect(yandexProvider.authRequired).toBe(false);
   });
 
   it('translates multiple texts in parallel', async () => {
@@ -622,31 +621,16 @@ describe('provider registry availability handling', () => {
     const yandex = getTranslator('yandex')!;
 
     vi.mocked(isTauriAppPlatform).mockReturnValue(false);
-    expect(isTranslatorAvailable(yandex, false)).toBe(false);
-    expect(isTranslatorAvailable(yandex, true)).toBe(false);
+    expect(isTranslatorAvailable(yandex)).toBe(false);
 
     vi.mocked(isTauriAppPlatform).mockReturnValue(true);
-    expect(isTranslatorAvailable(yandex, false)).toBe(true);
+    expect(isTranslatorAvailable(yandex)).toBe(true);
   });
 
   it('isTranslatorAvailable returns false for disabled providers', async () => {
     const { isTranslatorAvailable } = await import('@/services/translators/providers');
     const disabled = { name: 'x', label: 'X', disabled: true, translate: async () => [] };
-    expect(isTranslatorAvailable(disabled, true)).toBe(false);
-    expect(isTranslatorAvailable(disabled, false)).toBe(false);
-  });
-
-  it('isTranslatorAvailable returns false for authRequired without token', async () => {
-    const { isTranslatorAvailable } = await import('@/services/translators/providers');
-    const authed = { name: 'x', label: 'X', authRequired: true, translate: async () => [] };
-    expect(isTranslatorAvailable(authed, false)).toBe(false);
-    expect(isTranslatorAvailable(authed, true)).toBe(true);
-  });
-
-  it('isTranslatorAvailable returns false when quota is exceeded', async () => {
-    const { isTranslatorAvailable } = await import('@/services/translators/providers');
-    const exhausted = { name: 'x', label: 'X', quotaExceeded: true, translate: async () => [] };
-    expect(isTranslatorAvailable(exhausted, true)).toBe(false);
+    expect(isTranslatorAvailable(disabled)).toBe(false);
   });
 
   it('getTranslatorDisplayLabel returns the plain label for healthy providers', async () => {
@@ -654,6 +638,6 @@ describe('provider registry availability handling', () => {
       '@/services/translators/providers'
     );
     const google = getTranslator('google')!;
-    expect(getTranslatorDisplayLabel(google, true, (s) => s)).toBe('Google Translate');
+    expect(getTranslatorDisplayLabel(google)).toBe('Google Translate');
   });
 });

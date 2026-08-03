@@ -46,7 +46,7 @@ export class EdgeTTSClient extends BufferedTTSClient {
     // Every probe failed: blocked, or offline. With a persistent cache a
     // pre-downloaded book still plays (hits play, misses skip via the
     // provider's permanent error), so init as cache-only rather than fail —
-    // and do NOT nag a signed-out user with a warm cache to sign in.
+    // and do not interrupt a user whose local cache is still usable.
     if (this.provider instanceof CachingProvider) {
       this.initialized = true;
       return true;
