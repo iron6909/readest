@@ -312,6 +312,9 @@ jobs:
           pnpm tauri android init
           pnpm tauri icon ../../data/icons/readest-book.png
           git checkout .
+          # The icon generator and the tracked Android template both define
+          # ic_launcher_background. Keep the template's colors.xml entry.
+          rm -f src-tauri/gen/android/app/src/main/res/values/ic_launcher_background.xml
 
           pushd src-tauri/gen/android
           if [ "${{ github.repository }}" = "readest/readest" ]; then
