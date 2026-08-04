@@ -62,7 +62,7 @@ interface CustomDictionariesProps {
 interface ProviderRow {
   id: string;
   label: string;
-  kind: 'builtin' | 'stardict' | 'mdict' | 'dict' | 'slob' | 'web';
+  kind: 'builtin' | 'stardict' | 'mdict' | 'dict' | 'slob' | 'bgl' | 'web';
   badge: string;
   imported?: ImportedDictionary;
   /** Set on `kind: 'web'` rows. The shape distinguishes deletable custom
@@ -478,7 +478,9 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
               ? _('DICT')
               : dict.kind === 'slob'
                 ? _('Slob')
-                : _('StarDict'),
+                : dict.kind === 'bgl'
+                  ? _('Babylon')
+                  : _('StarDict'),
         imported: dict,
         disabled,
         reason,
@@ -896,6 +898,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         <li>{_('MDict bundles use .mdx files; companion .mdd and .css files are optional.')}</li>
         <li>{_('DICT bundles need a .index file and a .dict.dz file.')}</li>
         <li>{_('Slob bundles need a .slob file.')}</li>
+        <li>{_('Babylon dictionaries are single .bgl files.')}</li>
         <li>{_('Select all the bundle files together when importing.')}</li>
       </Tips>
 

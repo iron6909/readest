@@ -28,7 +28,8 @@ interface BookDetailModalProps {
   handleBookDeleteCloudBackup?: (book: Book) => void;
   handleBookDeleteLocalCopy?: (book: Book) => void;
   handleBookPurge?: (book: Book) => void;
-  handleBookMetadataUpdate?: (book: Book, updatedMetadata: BookMetadata) => void;
+  handleBookMetadataUpdate?: (book: Book, updatedMetadata: BookMetadata, tags: string[]) => void;
+  onMetadataValueClick?: (type: 'tag' | 'subject', value: string) => void;
 }
 
 // Purge is no longer a standalone menu action — it is an opt-in toggle on the
@@ -53,6 +54,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookDeleteLocalCopy,
   handleBookPurge,
   handleBookMetadataUpdate,
+  onMetadataValueClick,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -61,6 +63,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
+  const [bookTags, setBookTags] = useState<string[]>(book.tags ?? []);
   const [fileSize, setFileSize] = useState<number | null>(null);
   // The parent owns the `book` prop and does not re-pass it after a metadata
   // save, so the details view tracks the saved book locally to refresh its
@@ -70,6 +73,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   // Initialize metadata edit hook
   const {
     editedMeta,
+    editedTags,
     fieldSources,
     lockedFields,
     fieldErrors,
@@ -84,7 +88,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     handleSourceSelection,
     handleCloseSourceSelection,
     resetToOriginal,
-  } = useMetadataEdit(bookMeta);
+  } = useMetadataEdit(bookMeta, bookTags);
 
   const deleteConfigs: Record<DeleteMenuAction, DeleteConfig> = {
     both: {
@@ -125,6 +129,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
   useEffect(() => {
     setDisplayBook(book);
+    setBookTags(book.tags ?? []);
   }, [book]);
 
   const handleClose = () => {
@@ -145,11 +150,15 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
   const handleSaveMetadata = () => {
     if (editedMeta && handleBookMetadataUpdate) {
+      // The edit field keeps empty segments while typing; drop them and
+      // dedupe on save.
+      const savedTags = [...new Set(editedTags.map((tag) => tag.trim()).filter(Boolean))];
       setBookMeta({ ...editedMeta });
+      setBookTags(savedTags);
       // Capture the updated book before handleBookMetadataUpdate clears the
       // temporary cover fields on editedMeta, so the view refreshes its cover.
-      setDisplayBook(getBookWithUpdatedMetadata(book, editedMeta));
-      handleBookMetadataUpdate(book, editedMeta);
+      setDisplayBook(getBookWithUpdatedMetadata(book, editedMeta, savedTags));
+      handleBookMetadataUpdate(book, editedMeta, savedTags);
       setEditMode(false);
     }
   };
@@ -230,6 +239,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
               <BookDetailEdit
                 book={book}
                 metadata={editedMeta}
+                tags={editedTags}
                 fieldSources={fieldSources}
                 lockedFields={lockedFields}
                 fieldErrors={fieldErrors}
@@ -257,6 +267,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 onDownload={handleBookDownload ? handleRedownload : undefined}
                 onUpload={handleBookUpload ? handleReupload : undefined}
                 onExport={handleBookExport}
+                onMetadataValueClick={onMetadataValueClick}
               />
             )}
           </div>

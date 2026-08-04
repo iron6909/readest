@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useState } from 'react';
 import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
-import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline } from 'react-icons/md';
+import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline, MdOutlineSensors } from 'react-icons/md';
 import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
 import { MdSync } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
@@ -28,6 +28,7 @@ import { getStyles } from '@/utils/style';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
+import { nextThemeMode } from '@/utils/ambientLight';
 import dayjs from 'dayjs';
 import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
@@ -94,8 +95,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   };
 
   const cycleThemeMode = () => {
-    const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
-    setThemeMode(nextMode);
+    setThemeMode(nextThemeMode(themeMode, !!appService?.hasAmbientLightSensor));
   };
 
   const handleFullScreen = () => {
@@ -218,10 +218,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         'view-menu dropdown-content dropdown-right no-triangle z-20 mt-1.5 border',
         'bgcolor-base-200 shadow-2xl',
       )}
-      style={{
-        maxWidth: `${window.innerWidth - 40}px`,
-        marginRight: window.innerWidth < 640 ? '-36px' : '0px',
-      }}
       onCancel={() => setIsDropdownOpen?.(false)}
     >
       {bookData.bookDoc?.rendition?.layout === 'pre-paginated' && (
@@ -426,9 +422,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
             ? _('Dark Mode')
             : themeMode === 'light'
               ? _('Light Mode')
-              : _('Auto Mode')
+              : themeMode === 'ambient'
+                ? _('Ambient Mode')
+                : _('Auto Mode')
         }
-        Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
+        Icon={
+          themeMode === 'dark'
+            ? BiMoon
+            : themeMode === 'light'
+              ? BiSun
+              : themeMode === 'ambient'
+                ? MdOutlineSensors
+                : TbSunMoon
+        }
         onClick={cycleThemeMode}
       />
       {bookData.book?.format === 'PDF' && appService?.supportsCanvasContext2DFilter && (
