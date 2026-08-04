@@ -6,7 +6,7 @@ import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 
-import { Book } from '@/types/book';
+import { Book, LibrarySearchConfig, LibrarySearchTarget } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
 import {
   buildBookLookupIndex,
@@ -195,6 +195,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [isSelectNone, setIsSelectNone] = useState(false);
+  const [librarySearchQuery, setLibrarySearchQuery] = useState(searchParams?.get('q') ?? '');
+  const [librarySearchTarget, setLibrarySearchTarget] = useState<LibrarySearchTarget>(
+    searchParams?.get('search') === 'text' ? 'text' : 'books',
+  );
+  const [librarySearchConfig, setLibrarySearchConfig] = useState<LibrarySearchConfig>({
+    scope: 'book',
+    mode: 'contains',
+    matchCase: false,
+    matchDiacritics: false,
+    nearbyWords: 10,
+  });
+  const [, setLibrarySearchProgress] = useState<number | null>(null);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const [failedImportsModal, setFailedImportsModal] = useState<FailedImport[] | null>(null);
   // "Import from folder" dialog state. Held as a small object rather
@@ -1441,6 +1453,26 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setIsSelectAll(false);
   };
 
+  const updateLibrarySearch = (query: string, target: LibrarySearchTarget) => {
+    const params = new URLSearchParams(window.location.search);
+    if (query) params.set('q', query);
+    else params.delete('q');
+    if (target === 'text') params.set('search', 'text');
+    else params.delete('search');
+    window.history.replaceState(null, '', `?${params.toString()}`);
+  };
+
+  const handleSearchQueryChange = (query: string) => {
+    setLibrarySearchQuery(query);
+    updateLibrarySearch(query, librarySearchTarget);
+  };
+
+  const handleSearchTargetChange = (target: LibrarySearchTarget) => {
+    setLibrarySearchTarget(target);
+    updateLibrarySearch(librarySearchQuery, target);
+    if (target === 'text') handleSetSelectMode(false);
+  };
+
   const handleShowDetailsBook = (book: Book) => {
     setShowDetailsBook(book);
   };
@@ -1491,6 +1523,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
+          searchQuery={librarySearchQuery}
+          searchTarget={librarySearchTarget}
+          searchConfig={librarySearchConfig}
+          onSearchConfigChange={setLibrarySearchConfig}
+          onSearchQueryChange={handleSearchQueryChange}
+          onSearchTargetChange={handleSearchTargetChange}
         />
         <progress
           aria-label={_('Library Sync Progress')}
@@ -1579,6 +1617,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 handleLibraryNavigation={handleLibraryNavigation}
                 booksTransferProgress={booksTransferProgress}
                 handlePushLibrary={pushLibrary}
+                onSearchContents={() => handleSearchTargetChange('text')}
+                onSearchProgress={setLibrarySearchProgress}
+                contentSearch={
+                  librarySearchTarget === 'text'
+                    ? { query: librarySearchQuery, config: librarySearchConfig }
+                    : null
+                }
               />
             </div>
           </div>

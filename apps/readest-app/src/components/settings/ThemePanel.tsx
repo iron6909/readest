@@ -33,6 +33,7 @@ import CodeHighlightingSettings from './theme/CodeHighlightingSettings';
 import ReadingRulerSettings from './theme/ReadingRulerSettings';
 import { Toggle } from '../primitives/toggle';
 import LibrarySettings from './theme/LibrarySettings';
+import type { BackgroundTextureScope } from '@/helpers/settings';
 
 const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -48,6 +49,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   // to the reader/global value per-field until decoupled; opened while reading
   // it edits the reader texture exactly as before.
   const isLibraryContext = !bookKey;
+  const [textureScope, setTextureScope] = useState<BackgroundTextureScope>(
+    isLibraryContext ? 'library' : 'reader',
+  );
   const currentTextureId = isLibraryContext
     ? (settings.libraryBackgroundTextureId ?? viewSettings.backgroundTextureId)
     : viewSettings.backgroundTextureId;
@@ -397,9 +401,8 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           <BackgroundTextureSelector
             predefinedTextures={PREDEFINED_TEXTURES}
             customTextures={customTextures.filter((t) => !t.deletedAt)}
-            title={
-              isLibraryContext ? _('Background Image (Library)') : _('Background Image (Reader)')
-            }
+            scope={textureScope}
+            onScopeChange={setTextureScope}
             selectedTextureId={selectedTextureId}
             backgroundOpacity={backgroundOpacity}
             backgroundSize={backgroundSize}

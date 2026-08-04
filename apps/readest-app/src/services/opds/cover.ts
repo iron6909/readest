@@ -2,11 +2,9 @@ import type { Book } from '@/types/book';
 import type { AppService } from '@/types/system';
 import type { OPDSGenericLink } from '@/types/opds';
 import { REL } from '@/types/opds';
-import { downloadFile } from '@/libs/storage';
 import { getProxiedURL, needsProxy, probeAuth } from '@/app/opds/utils/opdsReq';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { getCoverFilename } from '@/utils/book';
-import { uniqueId } from '@/utils/misc';
 
 /**
  * Exact-match a link's rel tokens. Substring matching is wrong here:
@@ -85,30 +83,17 @@ export const applyOPDSCover = async ({
     }
   }
 
-  const tmpPath = await appService.resolveFilePath(`opds_cover_${uniqueId()}`, 'Cache');
   try {
-    await downloadFile({
-      appService,
-      dst: tmpPath,
-      cfp: '',
-      url: downloadUrl,
+    const response = await fetch(downloadUrl, {
       headers,
-      singleThreaded: true,
-      // Same self-signed/private-CA workaround the book download uses (#4988).
-      skipSslVerification: true,
     });
-    const bytes = (await appService.readFile(tmpPath, 'None', 'binary')) as ArrayBuffer;
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const bytes = await response.arrayBuffer();
     if (!bytes?.byteLength) return false;
     await appService.writeFile(getCoverFilename(book), 'Books', bytes);
   } catch (error) {
     console.warn('[OPDS] failed to apply the feed cover:', error);
     return false;
-  } finally {
-    try {
-      await appService.deleteFile(tmpPath, 'None');
-    } catch {
-      // best effort cache cleanup
-    }
   }
 
   // Keep coverHash === partialMD5(cover.png) so cross-device cover sync still

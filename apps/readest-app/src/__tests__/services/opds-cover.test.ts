@@ -10,10 +10,6 @@ vi.mock('@/services/environment', () => ({
   getNodeAPIBaseUrl: () => '/node-api',
 }));
 
-vi.mock('@/libs/storage', () => ({
-  downloadFile: vi.fn().mockResolvedValue({}),
-}));
-
 vi.mock('@/app/opds/utils/opdsReq', () => ({
   probeAuth: vi.fn().mockResolvedValue(null),
   needsProxy: vi.fn(() => false),
@@ -21,13 +17,11 @@ vi.mock('@/app/opds/utils/opdsReq', () => ({
 }));
 
 import { applyOPDSCover, getOPDSCoverHref } from '@/services/opds/cover';
-import { downloadFile } from '@/libs/storage';
 import { probeAuth, getProxiedURL, needsProxy } from '@/app/opds/utils/opdsReq';
 
-const createMockAppService = (coverBytes = new Uint8Array([1, 2, 3]).buffer) =>
+const coverBytes = new Uint8Array([1, 2, 3]).buffer;
+const createMockAppService = () =>
   ({
-    resolveFilePath: vi.fn(async (path: string) => `/cache/${path}`),
-    readFile: vi.fn(async () => coverBytes),
     writeFile: vi.fn(async () => {}),
     deleteFile: vi.fn(async () => {}),
     computeCoverHash: vi.fn(async () => 'opds-cover-hash'),
@@ -88,7 +82,10 @@ describe('getOPDSCoverHref', () => {
 describe('applyOPDSCover', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(downloadFile).mockResolvedValue({});
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, status: 200, arrayBuffer: async () => coverBytes }),
+    );
     vi.mocked(needsProxy).mockReturnValue(false);
     vi.mocked(getProxiedURL).mockImplementation((url: string) => url);
     vi.mocked(probeAuth).mockResolvedValue(null);
@@ -105,23 +102,14 @@ describe('applyOPDSCover', () => {
     });
 
     expect(applied).toBe(true);
-    expect(downloadFile).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'https://cwa.example.com/cwa/opds/cover/572' }),
+    expect(fetch).toHaveBeenCalledWith(
+      'https://cwa.example.com/cwa/opds/cover/572',
+      expect.objectContaining({ headers: expect.any(Object) }),
     );
     expect(appService.writeFile).toHaveBeenCalledWith('h1/cover.png', 'Books', expect.anything());
     // Keeps the coverHash === partialMD5(cover.png) invariant (issue #4544).
     expect(book.coverHash).toBe('opds-cover-hash');
     expect(book.coverImageUrl).toBe('asset://books/h1/cover.png');
-  });
-
-  it('removes the temporary download once the cover is stored', async () => {
-    const appService = createMockAppService();
-    await applyOPDSCover({
-      appService,
-      book: createBook(),
-      coverUrl: 'https://cwa.example.com/cover/1',
-    });
-    expect(appService.deleteFile).toHaveBeenCalled();
   });
 
   it('sends basic auth and custom headers through the same probe as the book download', async () => {
@@ -137,7 +125,8 @@ describe('applyOPDSCover', () => {
       customHeaders: { 'X-Token': 'secret' },
     });
 
-    expect(downloadFile).toHaveBeenCalledWith(
+    expect(fetch).toHaveBeenCalledWith(
+      'https://cwa.example.com/cover/1',
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Basic dXNlcjpwYXNz',
@@ -148,7 +137,7 @@ describe('applyOPDSCover', () => {
   });
 
   it('keeps the extracted cover when the OPDS cover fails to download', async () => {
-    vi.mocked(downloadFile).mockRejectedValue(new Error('404 Not Found'));
+    vi.mocked(fetch).mockRejectedValue(new Error('404 Not Found'));
     const appService = createMockAppService();
     const book = createBook();
 
@@ -164,7 +153,12 @@ describe('applyOPDSCover', () => {
   });
 
   it('keeps the extracted cover when the server returns an empty body', async () => {
-    const appService = createMockAppService(new ArrayBuffer(0));
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      arrayBuffer: async () => new ArrayBuffer(0),
+    } as Response);
+    const appService = createMockAppService();
     const book = createBook();
 
     const applied = await applyOPDSCover({
