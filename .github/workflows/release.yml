@@ -294,13 +294,18 @@ jobs:
           echo "SENTRY_PROJECT=readest" >> .env.local
           cp .env.local apps/readest-app/.env.local
 
+      - name: disable signing for fork builds
+        if: github.repository != 'readest/readest'
+        run: |
+          node -e "const fs=require('fs'); const p='apps/readest-app/src-tauri/tauri.conf.json'; const c=JSON.parse(fs.readFileSync(p)); c.bundle.createUpdaterArtifacts=false; delete c.plugins?.updater; fs.writeFileSync(p, JSON.stringify(c,null,2)+'\\n');"
+
       - name: build and upload Android apks
         if: matrix.config.release == 'android'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_PRIVATE_KEY: ${{ github.repository == 'readest/readest' && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+          TAURI_PRIVATE_KEY_PASSWORD: ${{ github.repository == 'readest/readest' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
         run: |
           cd apps/readest-app/
           rm -rf src-tauri/gen/android
@@ -309,10 +314,14 @@ jobs:
           git checkout .
 
           pushd src-tauri/gen/android
-          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
-          echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
-          base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
-          echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
+          if [ "${{ github.repository }}" = "readest/readest" ]; then
+            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
+            echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
+            base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
+            echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
+          else
+            rm -f keystore.properties
+          fi
 
           popd
           version=${{ needs.get-release.outputs.release_version }}
@@ -328,14 +337,9 @@ jobs:
           gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk --clobber
           echo "Uploading $arm64_apk to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk --clobber
-          echo "Uploading signatures to GitHub release"
-          pnpm tauri signer sign $universial_apk
-          pnpm tauri signer sign $arm64_apk
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk.sig --clobber
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk.sig --clobber
 
       - name: attest Android apks
-        if: matrix.config.release == 'android'
+        if: matrix.config.release == 'android' && github.repository == 'readest/readest'
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-path: |
@@ -343,7 +347,7 @@ jobs:
             apps/readest-app/Readest_${{ needs.get-release.outputs.release_version }}_arm64.apk
 
       - name: download and update latest.json for Android release
-        if: matrix.config.release == 'android'
+        if: matrix.config.release == 'android' && github.repository == 'readest/readest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -410,14 +414,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_BUNDLER_NEW_APPIMAGE_FORMAT: 'true'
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ github.repository == 'readest/readest' && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ github.repository == 'readest/readest' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
+          APPLE_CERTIFICATE: ${{ github.repository == 'readest/readest' && secrets.APPLE_CERTIFICATE || '' }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ github.repository == 'readest/readest' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
+          APPLE_SIGNING_IDENTITY: ${{ github.repository == 'readest/readest' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          APPLE_ID: ${{ github.repository == 'readest/readest' && secrets.APPLE_ID || '' }}
+          APPLE_PASSWORD: ${{ github.repository == 'readest/readest' && secrets.APPLE_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ github.repository == 'readest/readest' && secrets.APPLE_TEAM_ID || '' }}
           NODE_OPTIONS: '--max-old-space-size=8192'
         with:
           projectPath: apps/readest-app
@@ -484,24 +488,18 @@ jobs:
           echo "Uploading $bin_file to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file --clobber
 
-          echo "Signing portable binary"
-          pushd apps/readest-app/
-          pnpm tauri signer sign "../../$bin_file"
-          popd
-          echo "Uploading signature to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file.sig --clobber
 
       # The portable rebuild above is not produced by tauri-action, so it is not
       # covered by the "attest desktop bundles" step; attest it here. Exactly one
       # portable exe is staged at the workspace root per Windows leg.
       - name: attest Windows portable binary
-        if: matrix.config.os == 'windows-latest'
+        if: matrix.config.os == 'windows-latest' && github.repository == 'readest/readest'
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-path: Readest_*-portable.exe
 
       - name: download and update latest.json for Windows portable release
-        if: matrix.config.os == 'windows-latest'
+        if: matrix.config.os == 'windows-latest' && github.repository == 'readest/readest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
